@@ -1,5 +1,6 @@
+// app/components/layout/Navbar.jsx
 "use client";
-
+import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -62,6 +63,9 @@ export default function Navbar() {
   let activeLinkClass = "bg-indigo-50 text-indigo-600 font-bold";
   let mobileMenuBg = "bg-white/95 border-slate-100";
   let dropdownBg = "bg-white border-slate-200/80 shadow-xl text-slate-700";
+  
+  // ألوان زر المساعد الذكي
+  let aiButtonBg = "bg-indigo-50/50 border-indigo-100 hover:bg-indigo-100 hover:border-indigo-200 text-indigo-700";
 
   switch (templateId) {
     case 1: // Classic Theme
@@ -71,6 +75,7 @@ export default function Navbar() {
       activeLinkClass = "bg-[#EADDCD] text-[#3B2F2F] font-bold border border-[#D5C6B5]";
       mobileMenuBg = "bg-[#F4EFE6]/95 border-[#E6DFD3]";
       dropdownBg = "bg-[#FFFDF8] border-[#E6DFD3] shadow-lg text-[#5A4634]";
+      aiButtonBg = "bg-[#EADDCD]/50 border-[#D5C6B5] hover:bg-[#EADDCD] text-[#5A4634]";
       break;
     case 2: // Dark Theme
       navClasses += "bg-[#111111]/90 border-[#222222] text-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.4)]";
@@ -79,6 +84,7 @@ export default function Navbar() {
       activeLinkClass = "bg-[#222222] text-[#D4AF37] font-bold border border-[#333333]";
       mobileMenuBg = "bg-[#111111]/95 border-[#222222]";
       dropdownBg = "bg-[#1A1A1A] border-[#333333] shadow-2xl text-slate-300";
+      aiButtonBg = "bg-[#1A1A1A] border-[#D4AF37]/40 hover:bg-[#222] text-[#D4AF37]";
       break;
     case 3: 
     default: // Bright Default
@@ -90,8 +96,8 @@ export default function Navbar() {
     <header className={navClasses} dir="rtl">
       <div className="container-shell">
         <nav className="flex h-16 items-center justify-between gap-4">
-          <Link href="/" className={`text-2xl font-black shrink-0 transition-transform active:scale-95 ${logoClass}`}>
-            دارك
+          <Link href="/" className="shrink-0 transition-transform active:scale-95 flex items-center">
+            <Image src="/images/logo.jpg" alt="دارك" width={100} height={74} className="inline-block mr-2" />
           </Link>
 
           {/* Links Grid */}
@@ -112,6 +118,20 @@ export default function Navbar() {
 
           {/* Left Control Bar */}
           <div className="flex items-center gap-3">
+            
+            {/* ── زر المساعد الذكي AI ── */}
+            <Link 
+              href="/ai-assistant" 
+              className={`relative group flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 shadow-sm ${aiButtonBg}`}
+            >
+              <span className="text-base group-hover:animate-pulse">✨</span>
+              <span className="text-xs font-black hidden sm:block">المساعد الذكي</span>
+              
+              <span className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/50">
+                AI
+              </span>
+            </Link>
+
             {isAuthenticated ? (
               <>
                 <NotificationBell />
@@ -135,7 +155,7 @@ export default function Navbar() {
                         <p className={`text-sm font-black truncate ${templateId === 2 ? "text-white" : "text-slate-900"}`}>
                           {user?.firstName} {user?.lastName}
                         </p>
-                        <p className={`text-xs truncate mt-1 ${templateId === 2 ? "text-slate-400" : "text-slate-400"}`}>
+                        <p className="text-xs truncate mt-1 text-slate-400">
                           {user?.email}
                         </p>
                       </div>
@@ -194,6 +214,11 @@ export default function Navbar() {
                   </Link>
                 </li>
               ))}
+              <li>
+                 <Link href="/ai-assistant" className={`block rounded-xl px-4 py-3 text-sm font-bold transition-colors ${linkClass}`}>
+                    ✨ المساعد الذكي (AI)
+                 </Link>
+              </li>
             </ul>
           </div>
         )}
