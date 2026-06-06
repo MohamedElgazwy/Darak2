@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { announcementService, userService } from "@/app/services";
 import PropertyCard from "@/app/components/shared/PropertyCard";
+import CompanyCard from "@/app/components/company/CompanyCard";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -56,16 +57,17 @@ export default function HomePage() {
         });
         
         setCompanies(Array.from(uniqueCompaniesMap.values()));
-      } finally {
-        setLoading(false);
       }
+
+      // انتهت محاولات الجلب — إخفاء لودنج
+      setLoading(false);
     };
 
     fetchData();
   }, []);
 
-  const companyAnnouncementCount = (companyId) => 
-    companyAnnouncements.filter(a => String(a.companyId) === String(companyId) || String(a.userId) === String(companyId) || `company_node_${a.id}` === String(companyId)).length;
+  const companyAnnouncementCount = (companyId) =>
+    companyAnnouncements.filter(a => String(a.companyId) === String(companyId) || String(a.userId) === String(companyId)).length;
 
   if (loading) {
     return (
@@ -76,22 +78,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container-shell py-12 text-right" dir="rtl">
-      {/* ── Intro Section ── */}
-      <section className="mb-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          <div>
-            <h1 className="text-4xl font-extrabold mb-4 text-slate-900 leading-tight">اكتشف منزل أحلامك مع دارك</h1>
-            <p className="text-slate-600 mb-6 leading-relaxed text-lg">
-              وجهتك الأولى للبحث عن العقارات في مصر. تصفح خيارات متميزة من كبرى الشركات العقارية الموثوقة أو تواصل مع الملاك مباشرة.
-            </p>
-            <div className="flex gap-3">
-              <Link href="/search" className="btn-primary">ابحث عن عقار</Link>
-              <Link href="/templates" className="btn-secondary">تعرف على باقات الشركات</Link>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="container-shell py-12">
 
       {/* ── عقارات الشركات ── */}
       <section className="mb-16">
