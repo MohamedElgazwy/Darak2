@@ -6,6 +6,11 @@ export const userService = {
     return res.data;
   },
 
+  getProfile: async (userId) => {
+    const res = await api.get(`/Users/${userId}/profile`);
+    return res.data;
+  },
+
   getById: async (id) => {
     const res = await api.get(`/Users/${id}`);
     return res.data;

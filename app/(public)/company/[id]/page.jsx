@@ -3,12 +3,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-
-import { announcementService, companyAboutService, companyServicesService, userService } from "@/app/services";
-import { useCompanyTheme } from "@/app/context/CompanyThemeContext";
 import ClassicTheme from "@/app/components/company/themes/ClassicTheme";
 import DarkTheme from "@/app/components/company/themes/DarkTheme";
 import BrightTheme from "@/app/components/company/themes/BrightTheme";
+import { announcementService, companyAboutService, companyServicesService, userService } from "@/app/services";
+import { useCompanyTheme } from "@/app/context/CompanyThemeContext";
 
 export default function CompanyStorefrontPage() {
   const { id } = useParams();
@@ -25,33 +24,39 @@ export default function CompanyStorefrontPage() {
       let companyInfo = null;
       
       try {
-        // Attempt to pull real database records for this dynamic company id
-        const userRes = await userService.getById(id);
-        companyInfo = userRes?.data || userRes;
-      } catch (err) {
-        console.warn(`Could not load real profile for ID: ${id} (${err.response?.status || 'Network Error'}). Deploying runtime template shell...`);
+        // 🛠️ استخدام الـ Endpoint العامة الجديدة والآمنة للزوار
+        if (id && String(id).startsWith("company_node_")) {
+          throw new Error("Synthetic fallback ID detected.");
+        }
         
-        // Dynamic mock metadata mapping based on template IDs to prevent dead storefront pages
+        const profileRes = await userService.getProfile(id);
+        companyInfo = profileRes?.data || profileRes;
+      } catch (err) {
+        // 🟢 معالجة الـ 404 أو الـ Fallback في حال عدم العثور على الحساب
+        console.warn(`Profile layout fallen back for core ID: ${id}. Injecting default layout view.`);
+        
+        const isDark = String(id).includes("26");
+        const isClassic = String(id).includes("27");
+        
         companyInfo = {
           id: id,
-          companyName: String(id) === "27" || String(id).includes("27") ? "هيريتدج العقارية (Heritage)" : "شركة عقارية معتمدة",
-          templateId: String(id) === "26" || String(id).includes("26") ? 2 : String(id) === "27" || String(id).includes("27") ? 1 : 3,
+          companyName: isClassic ? "هيريتدج العقارية (Heritage)" : isDark ? "فيلا إستيت الفاخرة (Villa Estate)" : "شركة عقارية معتمدة",
+          templateId: isClassic ? 1 : isDark ? 2 : 3,
           description: "عقارات استثنائية متكاملة تضمن لك الأمان والرفاهية العالية في أرقى المجمعات السكنية."
         };
       }
 
       setCompanyData(companyInfo);
 
-      // Trigger context transmission so headers and layout transform instantly
+      // تمرير القالب للـ Context لتحديث الهيدر والفوتر تلقائياً
       const targetTemplateId = companyInfo?.templateId || 3;
       if (setTemplateId) setTemplateId(targetTemplateId);
 
-      // Fetch announcements and filter securely
+      // جلب العقارات المرتبطة
       try {
         const annRes = await announcementService.getPaginated({ PageNumber: 1, PageSize: 50 });
         const allItems = annRes?.data?.items || annRes?.items || [];
         
-        // Filter elements matching company records natively
         const filteredList = allItems.filter(a => 
           String(a.userId) === String(id) || 
           String(a.companyId) === String(id) || 
@@ -60,10 +65,10 @@ export default function CompanyStorefrontPage() {
         );
         setAnnouncements(filteredList);
       } catch (e) {
-        console.error("Failed loading announcements collection for store", e);
+        console.error(e);
       }
 
-      // Fetch informational about-blocks and standalone profile values safely
+      // جلب كتل البيانات التعريفية الإضافية
       try {
         const aboutRes = await companyAboutService.getList();
         const aboutList = aboutRes?.data || aboutRes || [];
@@ -73,7 +78,7 @@ export default function CompanyStorefrontPage() {
         setAbout({ description: companyInfo.description });
       }
 
-      // Fetch services safely
+      // جلب الخدمات
       try {
         const servRes = await companyServicesService.getList();
         const servList = servRes?.data || servRes || [];

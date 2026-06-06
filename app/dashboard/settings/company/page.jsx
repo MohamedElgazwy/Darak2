@@ -1,3 +1,4 @@
+// app/dashboard/profile-settings/page.jsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -56,37 +57,46 @@ export default function CompanyProfileSettingsPage() {
     }
   };
 
-  if (loading) return <div className="p-10 text-center">جاري تحميل بيانات الملف التعريفي...</div>;
+  if (loading) {
+    return (
+      <div className="p-12 text-center text-slate-400 font-medium">
+        <div className="flex justify-center mb-2"><div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" /></div>
+        جاري جلب الملف التعريفي للوكالة...
+      </div>
+    );
+  }
 
   return (
     <ProtectedRoute>
-      <div className="max-w-3xl mx-auto space-y-6 text-right" dir="rtl">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">الملف التعريفي للشركة</h1>
-          <p className="text-sm text-slate-500">تحديث من نحن، الرؤية، والرسالة لعرضها داخل القالب المختار للعملاء.</p>
+      <div className="max-w-3xl mx-auto space-y-6 text-right animate-in fade-in duration-300" dir="rtl">
+        <div className="border-b border-slate-200/60 pb-5">
+          <h1 className="text-2xl font-black text-slate-950 tracking-tight">🏢 الهوية والملف التعريفي للشركة</h1>
+          <p className="text-xs font-semibold text-slate-400 mt-1">قم بتحديث من نحن، رؤية ورسالة الوكالة لتظهر تلقائياً بداخل القالب المختار للعملاء.</p>
         </div>
 
-        {success && <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-medium">{success}</div>}
-        {error && <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">{error}</div>}
+        {success && <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-bold shadow-sm">{success}</div>}
+        {error && <div className="p-4 bg-red-50 border border-red-100 text-red-700 rounded-xl text-xs font-bold shadow-sm">{error}</div>}
 
-        <form onSubmit={handleSaveAbout} className="bg-white border rounded-2xl p-6 space-y-5 shadow-sm">
+        <form onSubmit={handleSaveAbout} className="bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 space-y-5 shadow-sm relative overflow-hidden">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">وصف الشركة (من نحن) *</label>
-            <textarea required rows="4" value={aboutData.description} onChange={(e) => setAboutData({...aboutData, description: e.target.value})} className="w-full rounded-xl border border-slate-300 p-3 text-sm focus:outline-none focus:border-indigo-600" placeholder="اكتب نبذة مختصرة عن تاريخ شركتكم العقارية وعملائها..." />
+            <label className="block text-xs font-bold text-slate-700 mb-1.5 mr-1">وصف الشركة وعنوان (من نحن) *</label>
+            <textarea required rows="4" value={aboutData.description} onChange={(e) => setAboutData({...aboutData, description: e.target.value})} className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 text-sm focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition leading-relaxed placeholder-slate-400" placeholder="اكتب نبذة تفصيلية ومختصرة عن تاريخ شركتكم العقارية وعملائها وتاريخ التأسيس..." />
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">رؤية الشركة</label>
-              <textarea rows="3" value={aboutData.vision} onChange={(e) => setAboutData({...aboutData, vision: e.target.value})} className="w-full rounded-xl border border-slate-300 p-3 text-sm focus:outline-none focus:border-indigo-600" />
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 mr-1">رؤية الشركة الاستراتيجية</label>
+              <textarea rows="3" value={aboutData.vision} onChange={(e) => setAboutData({...aboutData, vision: e.target.value})} className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 text-sm focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition leading-relaxed" placeholder="ما هي تطلعات وأهداف الوكالة المستقبلية في السوق؟" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">رسالة الشركة</label>
-              <textarea rows="3" value={aboutData.mission} onChange={(e) => setAboutData({...aboutData, mission: e.target.value})} className="w-full rounded-xl border border-slate-300 p-3 text-sm focus:outline-none focus:border-indigo-600" />
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 mr-1">رسالة الشركة وقيم العمل</label>
+              <textarea rows="3" value={aboutData.mission} onChange={(e) => setAboutData({...aboutData, mission: e.target.value})} className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 text-sm focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition leading-relaxed" placeholder="ما هي القيم والمعايير التي تلتزمون بها تجاه المستأجر والمشتري؟" />
             </div>
           </div>
+          
           <div className="pt-4 border-t flex justify-end">
-            <button type="submit" disabled={submitting} className="bg-indigo-600 px-6 py-2.5 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition disabled:opacity-50">
-              {submitting ? "جاري الحفظ..." : "حفظ بيانات الشركة"}
+            <button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-700 px-6 py-3 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-600/10 transition transform active:scale-95 disabled:opacity-50">
+              {submitting ? "جاري الحفظ والتشهير..." : "💾 حفظ الهوية التعريفية"}
             </button>
           </div>
         </form>

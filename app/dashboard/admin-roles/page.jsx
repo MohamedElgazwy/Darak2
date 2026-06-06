@@ -1,10 +1,10 @@
+// app/dashboard/admin-roles/page.jsx
 "use client";
 
 import { AdminRoute } from "@/app/lib/guards";
 import { roleService } from "@/app/services";
 import { useEffect, useState } from "react";
 
-// الأذونات الافتراضية للنظام
 const AVAILABLE_PERMISSIONS = [
   "Announcements:read",
   "AnnouncementsStatus:Update",
@@ -21,24 +21,17 @@ export default function AdminRolesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ─── Modal States ───
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState("create"); // "create" | "edit"
+  const [modalMode, setModalMode] = useState("create"); 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  const [formData, setFormData] = useState({
-    id: "",
-    name: "",
-    permissions: [],
-  });
+  const [formData, setFormData] = useState({ id: "", name: "", permissions: [] });
 
-  // ─── 1. جلب قائمة الأدوار ───
   const fetchRoles = async () => {
     setLoading(true);
     setError("");
     try {
-      // نرسل true لجلب جميع الصلاحيات بما فيها المعطلة
       const res = await roleService.getAll(true);
       const rolesData = res?.data || res || [];
       setRoles(Array.isArray(rolesData) ? rolesData : []);
@@ -54,7 +47,6 @@ export default function AdminRolesPage() {
     fetchRoles();
   }, []);
 
-  // ─── 2. تغيير حالة الدور (تفعيل / تعطيل) ───
   const handleToggleStatus = async (id, name) => {
     if (!window.confirm(`هل أنت متأكد أنك تريد تغيير حالة صلاحية الدور: ${name}؟`)) return;
     try {
@@ -65,7 +57,6 @@ export default function AdminRolesPage() {
     }
   };
 
-  // ─── 3. التحكم في الـ Modal ───
   const openCreateModal = () => {
     setModalMode("create");
     setFormData({ id: "", name: "", permissions: [] });
@@ -101,7 +92,6 @@ export default function AdminRolesPage() {
     });
   };
 
-  // ─── 4. إرسال بيانات الدور للسيرفر ───
   const handleModalSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -113,11 +103,7 @@ export default function AdminRolesPage() {
       return;
     }
 
-    // تجهيز الـ Object كـ JSON صريح لأن الـ Roles المعقدة في دوت نت تفضل الـ JSON وبودي مخصص
-    const payload = {
-      name: formData.name,
-      permissions: formData.permissions,
-    };
+    const payload = { name: formData.name, permissions: formData.permissions };
 
     try {
       if (modalMode === "create") {
@@ -125,7 +111,6 @@ export default function AdminRolesPage() {
       } else {
         await roleService.update(formData.id, payload);
       }
-      
       setIsModalOpen(false);
       fetchRoles(); 
     } catch (err) {
@@ -144,76 +129,56 @@ export default function AdminRolesPage() {
 
   return (
     <AdminRoute>
-      <div className="space-y-6 relative text-right" dir="rtl">
+      <div className="space-y-6 relative text-right animate-in fade-in duration-300" dir="rtl">
         
-        {/* ── عنوان الصفحة ── */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-5">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">إدارة الصلاحيات والأدوار</h1>
-            <p className="mt-1 text-sm text-slate-500">التحكم في مجموعات الصلاحيات (Roles) والأذونات المخصصة لكل مجموعة.</p>
+            <h1 className="text-2xl font-black text-slate-950 tracking-tight">🔐 إدارة المجموعات والأدوار الأمنية</h1>
+            <p className="mt-1 text-xs font-semibold text-slate-400">التحكم المطلق في جدار الحماية، وتعيين أذونات الموظفين والمديرين بالسيرفر.</p>
           </div>
-          <button onClick={openCreateModal} className="btn-primary bg-indigo-600 hover:bg-indigo-700 flex items-center gap-2 py-2 text-sm w-fit font-semibold">
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-            </svg>
-            إضافة صلاحية جديدة
+          <button onClick={openCreateModal} className="btn-primary bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center gap-2 py-2.5 text-xs w-full sm:w-fit font-bold shadow-md shadow-indigo-600/10">
+            ➕ إضافة دور مخصص جديد
           </button>
         </div>
 
-        {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 font-medium">
-            {error}
-          </div>
-        )}
+        {error && <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-600">{error}</div>}
 
-        {/* ── جدول الصلاحيات ── */}
-        <div className="surface-card overflow-hidden border border-slate-200 shadow-sm rounded-xl bg-white">
+        {/* Roles Table Board UI */}
+        <div className="bg-white border border-slate-200/60 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-right text-sm text-slate-600">
-              <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-900 border-b border-slate-100">
+              <thead className="bg-slate-50 border-b text-xs font-bold uppercase text-slate-900">
                 <tr>
-                  <th className="px-6 py-4">اسم الدور (Role)</th>
-                  <th className="px-6 py-4">الحالة</th>
-                  <th className="px-6 py-4">الإجراءات</th>
+                  <th className="px-6 py-4">اسم الدور الأمني (Role Name)</th>
+                  <th className="px-6 py-4">حالة النظام الحالية</th>
+                  <th className="px-6 py-4 text-center">الإجراءات والتحكم</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 font-medium">
                 {loading ? (
                   <tr>
-                    <td colSpan="3" className="px-6 py-12 text-center text-slate-500">
-                      <div className="flex justify-center mb-3">
-                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-                      </div>
-                      جاري تحميل البيانات...
+                    <td colSpan="3" className="px-6 py-12 text-center text-slate-400">
+                      <div className="flex justify-center mb-2"><div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" /></div>
+                      جاري جلب المصفوفات الأمنية...
                     </td>
                   </tr>
                 ) : roles.length === 0 ? (
-                  <tr>
-                    <td colSpan="3" className="px-6 py-12 text-center text-slate-500">
-                      لا يوجد صلاحيات مسجلة حتى الآن.
-                    </td>
-                  </tr>
+                  <tr><td colSpan="3" className="px-6 py-12 text-center text-slate-400 font-bold">🚫 لم يتم تكوين أدوار مخصصة بالسيرفر بعد.</td></tr>
                 ) : (
                   roles.map((role) => (
-                    <tr key={role.id} className="transition hover:bg-slate-50">
-                      <td className="px-6 py-4 font-medium text-slate-900">
-                        {role.name}
-                      </td>
+                    <tr key={role.id} className="hover:bg-slate-50/50 transition">
+                      <td className="px-6 py-4 font-bold text-slate-900">{role.name}</td>
                       <td className="px-6 py-4">
                         {role.isDeleted ? (
-                          <span className="rounded-md bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 border border-red-100">معطل / محذوف</span>
+                          <span className="rounded-lg bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-700 border border-red-100/60">⛔ معطل / محجوب</span>
                         ) : (
-                          <span className="rounded-md bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 border border-green-100">مفعل</span>
+                          <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-100/60">⚡ نشط ومفعل</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <button onClick={() => openEditModal(role)} className="font-semibold text-indigo-600 hover:text-indigo-700 transition">
-                            تعديل الأذونات
-                          </button>
-                          <button onClick={() => handleToggleStatus(role.id, role.name)} className="font-semibold text-amber-600 hover:text-amber-700 transition">
-                            تغيير الحالة
-                          </button>
+                        <div className="flex items-center justify-center gap-3 text-xs font-bold">
+                          <button onClick={() => openEditModal(role)} className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition">تعديل الأذونات</button>
+                          <button onClick={() => handleToggleStatus(role.id, role.name)} className="px-3 py-1.5 bg-amber-50 border border-amber-100 text-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition">تغيير حالة النشاط</button>
                         </div>
                       </td>
                     </tr>
@@ -224,64 +189,38 @@ export default function AdminRolesPage() {
           </div>
         </div>
 
-        {/* ── النافذة المنبثقة (Modal) للإنشاء والتعديل ── */}
+        {/* Modal Window Redesigned with Glassmorphism Overlay */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex justify-between items-center p-6 border-b border-slate-100">
-                <h3 className="text-xl font-bold text-slate-900">
-                  {modalMode === "create" ? "إضافة صلاحية جديدة" : "تعديل الصلاحية"}
-                </h3>
-                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 border text-right">
+              <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/60">
+                <h3 className="text-lg font-black text-slate-950">{modalMode === "create" ? "🔒 إضافة صلاحية جديدة" : "✏️ تعديل صلاحيات الدور البنائي"}</h3>
+                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white border h-8 w-8 rounded-full flex items-center justify-center transition shadow-sm">&times;</button>
               </div>
 
-              <form onSubmit={handleModalSubmit} className="p-6 space-y-5 text-right">
-                {formError && (
-                  <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100 font-medium">
-                    {formError}
-                  </div>
-                )}
+              <form onSubmit={handleModalSubmit} className="p-6 space-y-5">
+                {formError && <div className="rounded-xl border border-red-100 bg-red-50 p-3.5 text-xs font-bold text-red-600">{formError}</div>}
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">اسم الدور (Role Name)</label>
-                  <input 
-                    required 
-                    type="text" 
-                    value={formData.name} 
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
-                    placeholder="مثال: SuperAdmin أو Manager"
-                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:border-indigo-600 focus:outline-none" 
-                  />
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 mr-1">اسم الدور الأمني (Role Name)</label>
+                  <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="مثال: SuperAdmin أو Manager" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition" />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-3">الأذونات الممنوحة (Permissions)</label>
-                  <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto p-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-2 mr-1">الأذونات البرمجية الممنوحة (Claims)</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1.5 bg-slate-50 border border-slate-100 rounded-2xl">
                     {AVAILABLE_PERMISSIONS.map((perm) => (
-                      <label key={perm} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-slate-50 transition border border-transparent hover:border-slate-200">
-                        <input
-                          type="checkbox"
-                          checked={formData.permissions.includes(perm)}
-                          onChange={() => handlePermissionToggle(perm)}
-                          className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
-                        />
-                        <span className="text-sm font-medium text-slate-700">{perm}</span>
+                      <label key={perm} className="flex items-center gap-3.5 cursor-pointer p-2.5 bg-white border border-slate-200/60 rounded-xl hover:border-indigo-200 transition shadow-sm">
+                        <input type="checkbox" checked={formData.permissions.includes(perm)} onChange={() => handlePermissionToggle(perm)} className="h-4 w-4 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-50 focus:ring-4 transition cursor-pointer" />
+                        <span className="text-xs font-bold text-slate-700 select-none truncate" title={perm}>{perm}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 <div className="pt-4 flex gap-3 border-t border-slate-100 mt-6">
-                  <button type="submit" disabled={isSubmitting} className="btn-primary flex-1 py-2.5 text-sm bg-indigo-600 hover:bg-indigo-700 font-semibold">
-                    {isSubmitting ? "جاري الحفظ..." : "حفظ الصلاحية"}
-                  </button>
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary flex-1 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 py-2.5 text-sm font-medium">
-                    إلغاء
-                  </button>
+                  <button type="submit" disabled={isSubmitting} className="btn-primary flex-1 py-3 text-sm bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/10 font-bold">{isSubmitting ? "جاري الحفظ والتشهير..." : "حفظ واعتماد الصلاحية"}</button>
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary flex-1 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 py-3 text-sm font-bold shadow-sm">إلغاء الأمر</button>
                 </div>
               </form>
             </div>
