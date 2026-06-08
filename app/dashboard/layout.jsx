@@ -43,6 +43,8 @@ export default function DashboardLayout({ children }) {
   const navLinks = [
     { label: "🎛️ نظرة عامة", href: "/dashboard", exact: true },
     { label: "📑 إعلاناتي العقارية", href: "/dashboard/announcements" },
+    { label: "🏢 عن الشركة", href: "/dashboard/profile-settings" },
+    { label: "🛠️ خدمات الشركة", href: "/dashboard/company-services" },
     { label: "💳 المعاملات والطلبات", href: "/dashboard/transactions" },
     { label: "💎 باقة الاشتراك", href: "/dashboard/subscriptions" },
     { label: "⚙️ إعدادات الحساب", href: "/dashboard/settings" },

@@ -8,4 +8,5 @@ export * from './notification.service';
 export * from "./company-about.service";
 export * from "./company-services.service";
 export * from "./feedback.service";
+export * from "./company.service";
 export { default as api } from "./api";

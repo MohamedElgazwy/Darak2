@@ -31,10 +31,12 @@ function RegisterForm() {
   const router = useRouter();
   const { register } = useAuth();
   
+  // 💡 التعديل هنا: إضافة phoneNumber للـ State
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
+    phoneNumber: "", // <-- الحقل الجديد
     password: "",
     userType: "User", 
     companyName: "",
@@ -44,7 +46,7 @@ function RegisterForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // حالة إظهار وإخفاء كلمة المرور
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -231,19 +233,33 @@ function RegisterForm() {
           />
         </div>
 
+        {/* 💡 التعديل هنا: حقل رقم الهاتف الجديد */}
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-1.5 mr-1">رقم الهاتف</label>
+          <input
+            name="phoneNumber"
+            type="tel"
+            required
+            dir="ltr" // لضمان كتابة الأرقام بشكل صحيح من اليسار لليمين
+            placeholder="01xxxxxxxxx"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 transition-all duration-200 placeholder-slate-400 focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 text-left"
+            value={formData.phoneNumber}
+            onChange={handleChange}
+          />
+        </div>
+
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1.5 mr-1">كلمة المرور</label>
           <div className="relative">
             <input
               name="password"
-              type={showPassword ? "text" : "password"} // يتغير النوع ديناميكياً
+              type={showPassword ? "text" : "password"}
               required
               placeholder="••••••••"
               className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-12 pr-4 py-3 text-sm text-slate-900 transition-all duration-200 placeholder-slate-400 focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50"
               value={formData.password}
               onChange={handleChange}
             />
-            {/* زر الإخفاء والإظهار بتصميم متناسق */}
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}

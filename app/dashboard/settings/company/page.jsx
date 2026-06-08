@@ -43,10 +43,19 @@ export default function CompanyProfileSettingsPage() {
     setSuccess("");
 
     try {
+      // include company/user id for backend scoping
+      const stored = localStorage.getItem("authUser");
+      const currentUser = stored ? JSON.parse(stored) : null;
+      const payload = { ...aboutData };
+      if (currentUser?.id) {
+        payload.companyId = currentUser.id;
+        payload.userId = currentUser.id;
+      }
+
       if (isNewAbout) {
-        await api.post("/CompanyAbouts/Create", aboutData);
+        await api.post("/CompanyAbouts/Create", payload);
       } else {
-        await api.put("/CompanyAbouts/Update", aboutData);
+        await api.put("/CompanyAbouts/Update", payload);
       }
       setSuccess("تم تحديث الملف التعريفي للشركة بنجاح!");
       setIsNewAbout(false);
