@@ -1,7 +1,7 @@
 "use client";
 
 import { ProtectedRoute } from "@/app/lib/guards";
-import { companyServicesService } from "@/app/services";
+import { companyServicesService, subscriptionService } from "@/app/services";
 import { useEffect, useState } from "react";
 
 export default function CompanyServicesPage() {
@@ -9,6 +9,7 @@ export default function CompanyServicesPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [servicesAllowed, setServicesAllowed] = useState(true);
   
   // إذا كانت currentService فارغة، يعني أننا نضيف خدمة جديدة، وإذا كان بها بيانات يعني أننا نعدل
   const [currentService, setCurrentService] = useState(null);
@@ -34,10 +35,35 @@ export default function CompanyServicesPage() {
 
   useEffect(() => {
     fetchServices();
+    // check whether current company subscription allows 'Services' page (id 4)
+    const stored = localStorage.getItem("authUser");
+    const currentUser = stored ? JSON.parse(stored) : null;
+    const checkTemplate = async () => {
+      try {
+        const tplId = currentUser?.templateId || currentUser?.template?.id;
+        if (!tplId) return setServicesAllowed(true);
+        const tplRes = await subscriptionService.getTemplateById(tplId);
+        const tpl = tplRes?.data || tplRes;
+        let available = true;
+        if (tpl?.avaliablePages) {
+          const pages = JSON.parse(tpl.avaliablePages);
+          available = Array.isArray(pages) ? pages.includes(4) : true;
+        }
+        setServicesAllowed(available);
+      } catch (e) {
+        // assume allowed on error to avoid blocking users accidentally
+        setServicesAllowed(true);
+      }
+    };
+    checkTemplate();
   }, []);
 
   // فتح النافذة المنبثقة
   const openModal = (service = null) => {
+    if (!servicesAllowed) {
+      alert("خدمات الشركة غير متاحة في باقتك الحالية. تواصل مع الدعم أو قم بترقية باقتك.");
+      return;
+    }
     if (service) {
       setCurrentService(service);
       setFormData({ title: service.title, description: service.description, icon: service.icon });
@@ -66,9 +92,24 @@ export default function CompanyServicesPage() {
       const currentUser = stored ? JSON.parse(stored) : null;
       const payload = { ...formData };
       if (currentUser?.id) {
+        // backend may expect PascalCase keys or companyId; include both to be safe
         payload.companyId = currentUser.id;
         payload.userId = currentUser.id;
+        payload.CompanyId = currentUser.companyId || currentUser.id || undefined;
+        payload.UserId = currentUser.id || undefined;
       }
+
+      // Basic client-side validation
+      if (!payload.title || !payload.title.trim()) {
+        throw new Error('يرجى إدخال عنوان الخدمة');
+      }
+      if (!payload.description || !payload.description.trim()) {
+        throw new Error('يرجى إدخال وصف الخدمة');
+      }
+
+      // Debug: log payload sent to API
+      // eslint-disable-next-line no-console
+      console.log('Creating service payload:', payload);
 
       if (currentService) {
         // تعديل خدمة موجودة
@@ -80,8 +121,17 @@ export default function CompanyServicesPage() {
       closeModal();
       fetchServices(); // تحديث القائمة بعد الحفظ
     } catch (err) {
+      // Show more informative error when available
+      // eslint-disable-next-line no-console
       console.error("Failed to save service", err);
-      alert("حدث خطأ أثناء حفظ الخدمة.");
+      const serverMsg = err?.serverData || err?.response?.data || err?.message || "حدث خطأ أثناء حفظ الخدمة.";
+      // present readable message to user
+      try {
+        const msg = typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg);
+        alert(msg);
+      } catch (e) {
+        alert("حدث خطأ أثناء حفظ الخدمة.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -109,12 +159,24 @@ export default function CompanyServicesPage() {
               أضف الخدمات التي تتميز بها شركتكم (مثل: التقييم العقاري، الاستشارات، إدارة الأملاك...).
             </p>
           </div>
-          <button 
-            onClick={() => openModal()}
-            className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md flex items-center gap-2"
-          >
-            <span>+ إضافة خدمة جديدة</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => servicesAllowed ? openModal() : null}
+              disabled={!servicesAllowed}
+              className={`px-6 py-2.5 rounded-xl font-bold transition-all shadow-md flex items-center gap-2 ${
+                servicesAllowed ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              <span>+ إضافة خدمة جديدة</span>
+            </button>
+
+            {!servicesAllowed && (
+              <div className="bg-yellow-50 text-yellow-800 border border-yellow-100 rounded-lg px-3 py-2 text-sm flex items-center gap-3">
+                <div>خدمات الشركة غير متاحة في باقتك.</div>
+                <a href="/dashboard/subscriptions" className="text-indigo-600 font-semibold hover:underline">ترقية الباقة</a>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Services Grid */}

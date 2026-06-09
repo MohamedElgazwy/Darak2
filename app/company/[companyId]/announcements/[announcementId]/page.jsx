@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { announcementService } from "@/app/services";
+import FeedbackSection from "@/app/components/shared/FeedbackSection";
 
 export default function AnnouncementDetailsPage() {
   const params = useParams();
@@ -12,57 +14,49 @@ export default function AnnouncementDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [estate, setEstate] = useState(null);
   
-  // States الخاصة بقسم التقييمات (Feedback)
-  const [feedbacks, setFeedbacks] = useState([]);
-  const [newComment, setNewComment] = useState("");
-  const [newRating, setNewRating] = useState(5);
-  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  // Feedback handled by shared FeedbackSection component
 
   useEffect(() => {
-    // 💡 محاكاة جلب بيانات الإعلان من الباك إند
-    setTimeout(() => {
-      setEstate({
-        id: announcementId,
-        title: "فيلا فاخرة بإطلالة بحرية ساحرة",
-        type: "فيلا",
-        status: "للبيع",
-        location: "الساحل الشمالي، مصر",
-        price: "15,000,000",
-        beds: 5,
-        baths: 4,
-        area: 450,
-        description: "استمتع بالرفاهية المطلقة في هذه الفيلا الفاخرة المصممة على أحدث طراز معماري. تتميز بإطلالة بانورامية مباشرة على البحر، وحديقة خاصة واسعة مع مسبح إنفينيتي. تتكون الفيلا من طابقين ومجهزة بأحدث أنظمة المنزل الذكي (Smart Home). تشطيبات فائقة الجودة (سوبر لوكس) جاهزة للسكن الفوري. موقع استراتيجي بالقرب من كافة الخدمات والمناطق الترفيهية.",
-        features: ["مسبح خاص", "حديقة", "جراج لسيارتين", "أمن وحراسة 24/7", "تكييف مركزي", "منزل ذكي"],
-        images: [
-          "https://images.unsplash.com/photo-1613490900233-08cf04b73cb3?q=80&w=1200&auto=format&fit=crop",
-          "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop",
-          "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop"
-        ]
-      });
+    const fetch = async () => {
+      setLoading(true);
+      try {
+        const res = await announcementService.getById(announcementId);
+        // API may return object directly or wrapped in { data: ... }
+        const data = res?.data || res || null;
 
-      // 💡 محاكاة جلب تقييمات هذا الإعلان
-      setFeedbacks([
-        { id: 1, user: "أحمد محمود", rating: 5, comment: "الفيلا ممتازة ومطابقة تماماً للصور. تعامل راقي جداً من الشركة." },
-        { id: 2, user: "سارة عبد الله", rating: 4, comment: "الموقع رائع والتصميم عصري، لكن السعر مرتفع قليلاً مقارنة بالسوق." }
-      ]);
-      setLoading(false);
-    }, 1000);
+        if (data) {
+          // normalize images: check common fields
+          let images = data.images || data.Images || data.photos || data.Photos || [];
+          if (!images || images.length === 0) {
+            // some APIs return attachments array
+            const attachments = data.attachments || data.Attachments || data.media || data.Media || [];
+            images = attachments.map(a => a.url || a.path || a.file) .filter(Boolean);
+          }
+
+          // normalize phone: try several possible property names
+          const phone = data.phone || data.mobile || data.phoneNumber || data.contactPhone || data.ownerPhone || data.userPhone || data.contactNumber || null;
+
+          setEstate({
+            ...data,
+            images: images || [],
+            contactPhone: phone,
+          });
+          // feedbacks are loaded by the shared FeedbackSection component
+        } else {
+          setEstate(null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch announcement:", err);
+        setEstate(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (announcementId) fetch();
   }, [announcementId]);
 
-  // دالة إرسال تقييم جديد
-  const handleFeedbackSubmit = (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
-    setIsSubmittingFeedback(true);
-    
-    // محاكاة إرسال التقييم للباك إند
-    setTimeout(() => {
-      setFeedbacks([{ id: Date.now(), user: "زائر جديد", rating: newRating, comment: newComment }, ...feedbacks]);
-      setNewComment("");
-      setNewRating(5);
-      setIsSubmittingFeedback(false);
-    }, 1000);
-  };
+  // feedback create/update/delete handled by FeedbackSection component
 
   if (loading) {
     return (
@@ -73,6 +67,15 @@ export default function AnnouncementDetailsPage() {
   }
 
   if (!estate) return <div className="text-center py-20">لم يتم العثور على الإعلان.</div>;
+
+  const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://darak.runasp.net/API";
+  const API_ROOT = BASE_API.replace(/\/API$/i, "");
+  const resolveImage = (src) => {
+    if (!src) return null;
+    if (String(src).startsWith("data:") || String(src).startsWith("http")) return src;
+    // prefix relative paths with API root
+    return `${API_ROOT}${src.startsWith("/") ? "" : "/"}${src}`;
+  };
 
   return (
     <div className="space-y-12 pb-16">
@@ -86,7 +89,7 @@ export default function AnnouncementDetailsPage() {
 
       {/* ── 2. معرض الصور (Hero Image) ── */}
       <div className="relative h-[50vh] min-h-[400px] rounded-[2.5rem] overflow-hidden shadow-xl border border-current border-opacity-10">
-        <img src={estate.images[0]} alt={estate.title} className="w-full h-full object-cover" />
+        <img src={resolveImage(estate.images && estate.images[0])} alt={estate.title} className="w-full h-full object-cover" />
         <div className="absolute top-6 right-6 bg-black/60 backdrop-blur-md text-white text-sm font-bold px-5 py-2 rounded-full">
           {estate.status}
         </div>
@@ -94,6 +97,15 @@ export default function AnnouncementDetailsPage() {
           {estate.type}
         </div>
       </div>
+
+      {/* Thumbnails */}
+      {estate.images && estate.images.length > 1 && (
+        <div className="grid grid-cols-4 gap-3 mt-4">
+          {estate.images.slice(1, 9).map((img, idx) => (
+            <img key={idx} src={resolveImage(img)} alt={`${estate.title} ${idx+1}`} className="h-28 w-full object-cover rounded-xl border border-current border-opacity-10" />
+          ))}
+        </div>
+      )}
 
       {/* ── 3. تفاصيل العقار ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -161,12 +173,22 @@ export default function AnnouncementDetailsPage() {
             <h3 className="text-xl font-bold mb-2">هل أعجبك هذا العقار؟</h3>
             <p className="opacity-70 text-sm mb-8">تواصل معنا الآن لتحديد موعد للمعاينة أو لمعرفة المزيد من التفاصيل.</p>
             
-            <Link 
-              href={`/company/${companyId}/contact`}
-              className="w-full inline-block bg-amber-500 text-slate-900 font-bold py-4 rounded-xl hover:bg-amber-400 transition-colors shadow-md mb-4"
-            >
-              تواصل معنا
-            </Link>
+            {estate.contactPhone ? (
+              <a
+                href={`tel:${estate.contactPhone}`}
+                className="w-full inline-block bg-amber-500 text-slate-900 font-bold py-4 rounded-xl hover:bg-amber-400 transition-colors shadow-md mb-4"
+              >
+                عرض رقم الهاتف: {estate.contactPhone}
+              </a>
+            ) : (
+              <Link 
+                href={`/company/${companyId}/contact`}
+                className="w-full inline-block bg-amber-500 text-slate-900 font-bold py-4 rounded-xl hover:bg-amber-400 transition-colors shadow-md mb-4"
+              >
+                تواصل معنا
+              </Link>
+            )}
+
             <button className="w-full inline-block bg-transparent border-2 border-current border-opacity-20 font-bold py-3.5 rounded-xl hover:border-opacity-100 transition-colors">
               مشاركة الإعلان 🔗
             </button>
@@ -177,61 +199,7 @@ export default function AnnouncementDetailsPage() {
 
       {/* ── 4. قسم التقييمات (Feedback Section) ── */}
       <div className="mt-16 pt-12 border-t border-current border-opacity-10 max-w-4xl">
-        <h2 className="text-2xl font-black mb-8 flex items-center gap-2">
-          ⭐ تقييمات الزوار
-        </h2>
-
-        {/* نموذج إضافة تقييم */}
-        <form onSubmit={handleFeedbackSubmit} className="bg-current bg-opacity-5 p-6 rounded-3xl border border-current border-opacity-10 mb-10">
-          <h3 className="font-bold mb-4 opacity-90">أضف تقييمك لهذا العقار</h3>
-          <div className="flex items-center gap-2 mb-4 cursor-pointer">
-            <span className="text-sm opacity-70">التقييم:</span>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                type="button"
-                key={star}
-                onClick={() => setNewRating(star)}
-                className={`text-2xl transition-all ${newRating >= star ? "text-amber-400" : "opacity-20"}`}
-              >
-                ★
-              </button>
-            ))}
-          </div>
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            rows="3"
-            className="w-full p-4 bg-transparent border border-current border-opacity-20 rounded-2xl outline-none focus:border-opacity-50 transition-colors resize-none mb-4 placeholder-current placeholder-opacity-50"
-            placeholder="ما رأيك في هذا العقار؟ شاركنا تجربتك..."
-            required
-          ></textarea>
-          <button
-            type="submit"
-            disabled={isSubmittingFeedback}
-            className="bg-current text-white dark:text-slate-900 invert dark:invert-0 px-8 py-3 rounded-xl font-bold hover:opacity-80 transition-opacity flex items-center justify-center min-w-[120px]"
-          >
-            {isSubmittingFeedback ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" /> : "نشر التقييم"}
-          </button>
-        </form>
-
-        {/* قائمة التقييمات السابقة */}
-        <div className="space-y-6">
-          {feedbacks.length > 0 ? feedbacks.map((fb) => (
-            <div key={fb.id} className="pb-6 border-b border-current border-opacity-10 last:border-0 last:pb-0">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="text-amber-400 text-lg">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i}>{i < fb.rating ? "★" : "☆"}</span>
-                  ))}
-                </div>
-                <span className="font-bold opacity-90">{fb.user}</span>
-              </div>
-              <p className="opacity-80 leading-relaxed text-sm md:text-base">{fb.comment}</p>
-            </div>
-          )) : (
-            <div className="text-center opacity-60 py-8">لا توجد تقييمات لهذا العقار حتى الآن. كن أول من يقيم!</div>
-          )}
-        </div>
+        <FeedbackSection announcementId={announcementId} />
       </div>
 
     </div>

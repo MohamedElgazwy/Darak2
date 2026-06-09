@@ -52,6 +52,7 @@ export default function DashboardLayout({ children }) {
 
   const adminLinks = [
     { label: "👥 إدارة المستخدمين", href: "/dashboard/admin-users" },
+    { label: "📊 تحليلات وإحصائيات", href: "/dashboard/admin-analytics" },
     { label: "🔐 إدارة الصلاحيات والأدوار", href: "/dashboard/admin-roles" },
     { label: "📝 مراجعة وفحص الإعلانات", href: "/dashboard/admin-announcements" },
     { label: "💰 اشتراكات الكاش المعلقة", href: "/dashboard/admin-subscriptions" },

@@ -11,7 +11,7 @@ import { useCompanyTheme } from "@/app/context/CompanyThemeContext";
 
 export default function CompanyStorefrontPage() {
   const { companyId } = useParams();
-  const { setTemplateId } = useCompanyTheme();
+  const { setTemplateId, setCompanyName } = useCompanyTheme();
   
   const [companyData, setCompanyData] = useState(null);
   const [announcements, setAnnouncements] = useState([]);
@@ -49,7 +49,8 @@ export default function CompanyStorefrontPage() {
 
       setCompanyData(companyInfo);
       const targetTemplateId = companyInfo?.templateId || 3;
-      if (setTemplateId) setTemplateId(targetTemplateId);
+          if (setTemplateId) setTemplateId(targetTemplateId);
+          if (typeof setCompanyName === 'function') setCompanyName(companyInfo?.companyName || companyInfo?.firstName || "شركة دارك العقارية");
 
       // 1. جلب العقارات المرتبطة بالحساب
       try {
@@ -118,10 +119,14 @@ export default function CompanyStorefrontPage() {
   // تضمين الـ testimonials داخل الخصائص الممررة للقوالب
   const themeProps = { company: companyData, announcements, about, services, testimonials };
 
+  // Map templates: 1 (Modern) -> Bright, 2 (Classic) -> Classic, 3 (Luxury) -> Dark
   switch (companyData?.templateId) {
-    case 1: return <ClassicTheme {...themeProps} />;
-    case 2: return <DarkTheme {...themeProps} />;
     case 3:
-    default: return <BrightTheme {...themeProps} />;
+      return <DarkTheme {...themeProps} />;
+    case 2:
+      return <ClassicTheme {...themeProps} />;
+    case 1:
+    default:
+      return <BrightTheme {...themeProps} />;
   }
 }

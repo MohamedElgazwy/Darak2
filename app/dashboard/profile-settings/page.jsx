@@ -72,9 +72,17 @@ export default function CompanyProfileSettingsPage() {
       const currentUser = stored ? JSON.parse(stored) : null;
       const payload = { ...aboutData };
       if (currentUser?.id) {
-        payload.companyId = currentUser.id;
+        // include both camelCase and PascalCase keys and prefer explicit companyId when available
+        const companyId = currentUser.companyId || currentUser.id;
+        payload.companyId = companyId;
         payload.userId = currentUser.id;
+        payload.CompanyId = companyId;
+        payload.UserId = currentUser.id;
       }
+
+      // Debug: log payload sent to API
+      // eslint-disable-next-line no-console
+      console.log('Saving company about payload:', payload);
 
       if (isNewAbout) {
         await companyAboutService.create(payload);
@@ -85,8 +93,11 @@ export default function CompanyProfileSettingsPage() {
       setSuccessMsg("تم حفظ بيانات الشركة بنجاح! ✅");
       setTimeout(() => setSuccessMsg(""), 4000);
     } catch (err) {
-      console.error(err);
-      setError("حدث خطأ أثناء حفظ البيانات. يرجى المحاولة مرة أخرى.");
+      // eslint-disable-next-line no-console
+      console.error("Failed saving company about:", err);
+      // Try to surface server response for easier debugging
+      const serverMsg = err?.response?.data || err?.message || "حدث خطأ أثناء حفظ البيانات.";
+      setError(typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg));
     } finally {
       setIsSaving(false);
     }

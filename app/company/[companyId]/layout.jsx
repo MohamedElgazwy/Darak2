@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useCompanyTheme } from "@/app/context/CompanyThemeContext";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 
@@ -53,21 +54,36 @@ export default function CompanyStorefrontLayout({ children }) {
 
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState(null);
+  const { setTemplateId, setCompanyName } = useCompanyTheme();
 
-  useEffect(() => {
-    // 💡 هنا ستقوم باستدعاء API لجلب بيانات الشركة العامة (Profile, Theme, Available Pages)
-    // مثال: const res = await api.get(`/Company/${companyId}/Storefront`);
-    
-    // محاكاة مؤقتة للبيانات القادمة من الباك إند لأغراض الاختبار:
-    setTimeout(() => {
-      setStoreData({
-        companyName: "شركة دارك العقارية",
-        theme: "Classic", // جرب تغييرها إلى Bright أو Dark لترى السحر!
-        availablePages: [1, 2, 3, 4, 5, 6, 7] // الباقة الذهبية (كل الصفحات)
-      });
-      setLoading(false);
-    }, 1000);
-  }, [companyId]);
+    useEffect(() => {
+      const fetchStoreData = async () => {
+        try {
+          const { userService } = await import("@/app/services");
+          const profile = await userService.getProfile(companyId);
+
+          const companyName = profile?.companyName || `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim() || 'شركة دارك العقارية';
+          // map numeric templateId to theme name
+          const tpl = Number(profile?.templateId || 1);
+          const theme = tpl === 2 ? 'Classic' : tpl === 3 ? 'Dark' : 'Bright';
+
+          // availablePages may come from profile.subscription or template; fall back to all pages
+          const availablePages = profile?.availablePages || profile?.avaliablePages || [1,2,3,4,5,6,7];
+
+          setStoreData({ companyName, theme, availablePages });
+          if (typeof setTemplateId === 'function') setTemplateId(Number(profile?.templateId || 1));
+          if (typeof setCompanyName === 'function') setCompanyName(companyName);
+          setLoading(false);
+        } catch (e) {
+          setStoreData({ companyName: 'شركة دارك العقارية', theme: 'Bright', availablePages: [1,2,3,4,5,6,7] });
+          if (typeof setTemplateId === 'function') setTemplateId(1);
+          if (typeof setCompanyName === 'function') setCompanyName('شركة دارك العقارية');
+          setLoading(false);
+        }
+      };
+
+      fetchStoreData();
+    }, [companyId]);
 
   if (loading) {
     return (

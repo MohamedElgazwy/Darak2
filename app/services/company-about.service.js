@@ -13,7 +13,7 @@ export const companyAboutService = {
   },
   create: async (aboutData) => {
     const res = await api.post("/CompanyAbouts/Create", aboutData);
-    return res.data;
+    return res?.data || res;
   },
   update: async (aboutData) => {
     const res = await api.put("/CompanyAbouts/Update", aboutData);

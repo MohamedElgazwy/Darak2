@@ -41,7 +41,7 @@ export default function Footer() {
   let iconClass = "border-slate-200 text-slate-500 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 shadow-sm";
 
   switch (templateId) {
-    case 1: // Classic Theme
+    case 2: // Classic Theme
       footerClass += "bg-[#F4EFE6] border-[#E6DFD3]";
       logoClass = "text-[#5A4634]";
       headingClass = "text-[#3B2F2F] font-bold";
@@ -50,7 +50,7 @@ export default function Footer() {
       bottomTextClass = "text-[#8C7A6B]";
       iconClass = "border-[#D5C6B5] text-[#8C7A6B] hover:border-[#5A4634] hover:bg-[#EADDCD] hover:text-[#3B2F2F]";
       break;
-    case 2: // Dark Theme
+    case 3: // Dark Theme (Luxury)
       footerClass += "bg-[#0c0c0c] border-[#1f1f1f]";
       logoClass = "text-[#D4AF37] font-bold";
       headingClass = "text-white font-bold";
@@ -59,8 +59,7 @@ export default function Footer() {
       bottomTextClass = "text-slate-600";
       iconClass = "border-[#222] text-slate-400 hover:border-[#D4AF37] hover:bg-[#111] hover:text-[#D4AF37]";
       break;
-    case 3: 
-    default: // Bright & Default
+    default: // Bright & Default (Modern and fallback)
       footerClass += "bg-white border-slate-200/60";
       break;
   }

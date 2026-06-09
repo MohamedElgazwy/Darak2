@@ -50,6 +50,16 @@ export default function AnnouncementDetailsPage() {
             setOwner(ownerRes?.data || ownerRes || null);
           } catch (e) {
             console.warn("Failed to fetch owner info", e);
+            // Fallback: derive owner info from the announcement payload if available
+            const fallbackOwner = {
+              id: ownerId,
+              companyName: data.companyName || data.ownerName || data.organizationName || null,
+              firstName: data.ownerFirstName || data.firstName || null,
+              lastName: data.ownerLastName || data.lastName || null,
+              logo: data.companyLogo || data.logo || null,
+              userType: data.companyId ? "Company" : "User",
+            };
+            setOwner(fallbackOwner);
           }
         }
       } catch (err) {
@@ -135,9 +145,10 @@ export default function AnnouncementDetailsPage() {
           {/* Image Gallery */}
           <div className="space-y-4">
             <div className="aspect-[16/9] w-full overflow-hidden rounded-2xl bg-slate-100 border border-slate-200">
-              <img 
+                <img 
                 src={activeImage || "https://placehold.co/600x400?text=Darak+RealEstate"} 
                 alt={property.title} 
+                loading="eager"
                 className="h-full w-full object-cover"
                 onError={(e) => { e.target.src = "https://placehold.co/600x400?text=Darak+RealEstate"; }}
               />
@@ -153,12 +164,12 @@ export default function AnnouncementDetailsPage() {
                       activeImage === img ? "border-indigo-600 shadow-md opacity-100" : "border-transparent opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <img 
-                      src={img} 
-                      alt={`Thumbnail ${idx}`} 
-                      className="h-full w-full object-cover" 
-                      onError={(e) => { e.target.src = "https://placehold.co/600x400?text=Darak+RealEstate"; }} 
-                    />
+                      <img 
+                        src={img} 
+                        alt={`Thumbnail ${idx}`} 
+                        className="h-full w-full object-cover" 
+                        onError={(e) => { e.target.src = "https://placehold.co/600x400?text=Darak+RealEstate"; }} 
+                      />
                   </button>
                 ))}
               </div>
@@ -207,7 +218,13 @@ export default function AnnouncementDetailsPage() {
               <p className="mb-6 text-sm text-slate-500">
                 تواصل مع المعلن الآن لمعرفة المزيد من التفاصيل أو تحديد موعد للمعاينة.
               </p>
-              <button className="btn-primary mb-3 w-full flex items-center justify-center gap-2">عرض رقم الهاتف</button>
+              { (property.phone || property.mobile || property.contactPhone || property.ownerPhone || property.contactNumber) ? (
+                <a href={`tel:${property.phone || property.mobile || property.contactPhone || property.ownerPhone || property.contactNumber}`} className="btn-primary mb-3 w-full flex items-center justify-center gap-2">
+                  عرض رقم الهاتف: {property.phone || property.mobile || property.contactPhone || property.ownerPhone || property.contactNumber}
+                </a>
+              ) : (
+                <button className="btn-primary mb-3 w-full flex items-center justify-center gap-2">عرض رقم الهاتف</button>
+              )}
               <button className="btn-secondary w-full bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2">إرسال رسالة</button>
             </div>
 
@@ -215,12 +232,12 @@ export default function AnnouncementDetailsPage() {
               <div className="surface-card p-4 bg-white rounded-2xl border">
                 <div className="flex items-center gap-3">
                   <div className="h-12 w-12 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center">
-                    {owner.logo ? (
-                      <img src={`data:image/jpeg;base64,${owner.logo}`} alt="logo" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-slate-700 font-bold">{(owner.companyName || owner.firstName || "?")[0]}</span>
-                    )}
-                  </div>
+                          {owner.logo ? (
+                            <img src={`data:image/jpeg;base64,${owner.logo}`} alt="logo" className="h-full w-auto object-contain" />
+                          ) : (
+                            <span className="text-slate-700 font-bold">{(owner.companyName || owner.firstName || "?")[0]}</span>
+                          )}
+                        </div>
                   <div className="flex-1 text-right">
                     <p className="font-semibold text-slate-900">{owner.companyName || `${owner.firstName} ${owner.lastName}`}</p>
                     <p className="text-sm text-slate-500">{owner.userType === "Company" ? "شركة" : "فرد"}</p>
@@ -228,7 +245,7 @@ export default function AnnouncementDetailsPage() {
                 </div>
 
                 <div className="mt-4">
-                  <a href={`/company/${owner.id}`} className="text-indigo-600 hover:underline">زيارة صفحة البائع</a>
+                  <a href={`/company/${owner.id || property.companyId || property.userId}`} className="text-indigo-600 hover:underline">زيارة صفحة البائع</a>
                 </div>
               </div>
             )}

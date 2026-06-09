@@ -22,7 +22,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { templateId } = useCompanyTheme() || {};
+  const { templateId, companyName } = useCompanyTheme() || {};
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -68,7 +68,7 @@ export default function Navbar() {
   let aiButtonBg = "bg-indigo-50/50 border-indigo-100 hover:bg-indigo-100 hover:border-indigo-200 text-indigo-700";
 
   switch (templateId) {
-    case 1: // Classic Theme
+    case 2: // Classic Theme
       navClasses += "bg-[#F4EFE6]/90 border-[#E6DFD3] text-[#3B2F2F]";
       logoClass = "text-[#5A4634] font-black";
       linkClass = "text-[#5A4634] hover:bg-[#EADDCD]/70 hover:text-[#3B2F2F]";
@@ -77,7 +77,7 @@ export default function Navbar() {
       dropdownBg = "bg-[#FFFDF8] border-[#E6DFD3] shadow-lg text-[#5A4634]";
       aiButtonBg = "bg-[#EADDCD]/50 border-[#D5C6B5] hover:bg-[#EADDCD] text-[#5A4634]";
       break;
-    case 2: // Dark Theme
+    case 3: // Dark Theme (Luxury)
       navClasses += "bg-[#111111]/90 border-[#222222] text-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.4)]";
       logoClass = "text-[#D4AF37] font-black tracking-widest"; 
       linkClass = "text-slate-400 hover:bg-[#222222] hover:text-white";
@@ -86,8 +86,7 @@ export default function Navbar() {
       dropdownBg = "bg-[#1A1A1A] border-[#333333] shadow-2xl text-slate-300";
       aiButtonBg = "bg-[#1A1A1A] border-[#D4AF37]/40 hover:bg-[#222] text-[#D4AF37]";
       break;
-    case 3: 
-    default: // Bright Default
+    default: // Bright Default (Modern and fallback)
       navClasses += "bg-white/80 border-slate-200/60 text-slate-900";
       break;
   }
@@ -97,8 +96,23 @@ export default function Navbar() {
       <div className="container-shell">
         <nav className="flex h-16 items-center justify-between gap-4">
           <Link href="/" className="shrink-0 transition-transform active:scale-95 flex items-center">
-            <Image src="/images/logo.jpg" alt="دارك" width={100} height={74} className="inline-block mr-2" />
+            <Image
+              src="/images/logo.jpg"
+              alt="دارك"
+              width={100}
+              height={74}
+              loading="eager"
+              style={{ width: 'auto', height: 'auto' }}
+              className="inline-block mr-2"
+            />
           </Link>
+
+          {pathname?.startsWith('/company/') && companyName && (
+            <Link href={pathname.split('/').slice(0,3).join('/')} className="hidden lg:flex items-center gap-3 mr-4">
+              <div className="w-9 h-9 rounded-md flex items-center justify-center bg-indigo-50 text-indigo-700 font-black">{companyName.charAt(0)}</div>
+              <span className="font-black text-lg text-slate-900 truncate max-w-[220px]">{companyName}</span>
+            </Link>
+          )}
 
           {/* Links Grid */}
           <ul className="hidden md:flex items-center gap-1">
@@ -136,10 +150,10 @@ export default function Navbar() {
               <>
                 <NotificationBell />
                 <div className="relative" ref={dropdownRef}>
-                  <button
+                    <button
                     onClick={() => setDropdownOpen((prev) => !prev)}
                     className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-sm font-bold transition-all duration-300 focus:outline-none shadow-sm ${
-                      templateId === 2 ? "border-[#333] bg-[#1A1A1A] text-slate-200 hover:bg-[#222]" : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                      templateId === 3 ? "border-[#333] bg-[#1A1A1A] text-slate-200 hover:bg-[#222]" : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
                     }`}
                   >
                     <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-indigo-600 text-[11px] font-bold text-white shadow-sm">
@@ -151,8 +165,8 @@ export default function Navbar() {
 
                   {dropdownOpen && (
                     <div className={`absolute left-0 top-full z-50 mt-2.5 w-56 rounded-2xl border p-1.5 shadow-xl animate-in fade-in slide-in-from-top-3 duration-200 ${dropdownBg}`}>
-                      <div className={`border-b px-4 py-3 text-right ${templateId === 2 ? "border-[#333]" : "border-slate-100"}`}>
-                        <p className={`text-sm font-black truncate ${templateId === 2 ? "text-white" : "text-slate-900"}`}>
+                      <div className={`border-b px-4 py-3 text-right ${templateId === 3 ? "border-[#333]" : "border-slate-100"}`}>
+                        <p className={`text-sm font-black truncate ${templateId === 3 ? "text-white" : "text-slate-900"}`}>
                           {user?.firstName} {user?.lastName}
                         </p>
                         <p className="text-xs truncate mt-1 text-slate-400">
@@ -167,7 +181,7 @@ export default function Navbar() {
 
                         {isAdmin && (
                           <>
-                            <div className={`my-1 border-t ${templateId === 2 ? "border-[#333]" : "border-slate-100"}`} />
+                            <div className={`my-1 border-t ${templateId === 3 ? "border-[#333]" : "border-slate-100"}`} />
                             <DropdownLink href="/dashboard/admin-users" label="إدارة المستخدمين 👥" accent themeId={templateId} />
                             <DropdownLink href="/dashboard/admin-roles" label="إدارة الصلاحيات 🔐" accent themeId={templateId} />
                             <DropdownLink href="/dashboard/admin-announcements" label="مراجعة الإعلانات 📝" accent themeId={templateId} />
@@ -175,7 +189,7 @@ export default function Navbar() {
                           </>
                         )}
 
-                        <div className={`my-1 border-t ${templateId === 2 ? "border-[#333]" : "border-slate-100"}`} />
+                        <div className={`my-1 border-t ${templateId === 3 ? "border-[#333]" : "border-slate-100"}`} />
                         <button onClick={handleLogout} className="flex w-full items-center px-4 py-2.5 text-sm text-red-500 font-bold rounded-xl transition-colors hover:bg-red-50 hover:text-red-600 text-right">
                           تسجيل الخروج
                         </button>
@@ -189,7 +203,7 @@ export default function Navbar() {
                 <Link href="/auth/login" className={`rounded-xl px-4 py-2 text-sm font-bold transition-all duration-300 ${linkClass}`}>
                   تسجيل الدخول
                 </Link>
-                <Link href="/auth/register" className={`text-sm py-2 px-4 rounded-xl font-bold transition-all duration-300 shadow-md ${templateId === 2 ? "bg-[#D4AF37] text-black hover:bg-yellow-500 shadow-yellow-500/10" : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-600/10"}`}>
+                <Link href="/auth/register" className={`text-sm py-2 px-4 rounded-xl font-bold transition-all duration-300 shadow-md ${templateId === 3 ? "bg-[#D4AF37] text-black hover:bg-yellow-500 shadow-yellow-500/10" : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-600/10"}`}>
                   إنشاء حساب
                 </Link>
               </div>
@@ -228,8 +242,9 @@ export default function Navbar() {
 }
 
 function DropdownLink({ href, label, accent = false, themeId }) {
-  let defaultText = themeId === 2 ? "text-slate-300 hover:bg-[#222] hover:text-white" : "text-slate-700 hover:bg-slate-50 hover:text-slate-900";
-  let accentText = themeId === 2 ? "text-[#D4AF37] hover:bg-[#222]" : "text-indigo-600 font-bold hover:bg-indigo-50/60";
+  // Dark styling applies to templateId === 3 (Luxury)
+  let defaultText = themeId === 3 ? "text-slate-300 hover:bg-[#222] hover:text-white" : "text-slate-700 hover:bg-slate-50 hover:text-slate-900";
+  let accentText = themeId === 3 ? "text-[#D4AF37] hover:bg-[#222]" : "text-indigo-600 font-bold hover:bg-indigo-50/60";
   
   return (
     <Link href={href} className={`block px-4 py-2.5 text-sm text-right font-semibold rounded-xl transition-all duration-200 ${accent ? accentText : defaultText}`}>
