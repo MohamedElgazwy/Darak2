@@ -1,8 +1,7 @@
-// app/services/feedback.service.js
 import api from "./api";
 
 export const feedbackService = {
-  // جلب تقييمات شركة معينة (شهادات العملاء للـ Storefront)
+  // جلب تقييمات شركة معينة (شهادات العملاء للصفحة العامة)
   getCompanyTestimonials: async (companyId) => {
     const res = await api.get(`/Feedback/Company/${companyId}/testimonials`);
     return res.data;
@@ -16,13 +15,15 @@ export const feedbackService = {
 
   // إنشاء تقييم جديد
   create: async (feedbackData) => {
+    // feedbackData = { comment: "string", rating: 0, announcementId: 0 }
     const res = await api.post("/Feedback/Create", feedbackData);
     return res.data;
   },
 
-  // تعديل تقييم الحالي
+  // تعديل تقييم حالي
   update: async (feedbackData) => {
-    const res = await api.post("/Feedback/Update", feedbackData); // الباك إند يستقبل بودي صريح هنا بدون ID بالمسار
+    // feedbackData = { id: 0, comment: "string", rating: 0 }
+    const res = await api.put("/Feedback/Update", feedbackData);
     return res.data;
   },
 

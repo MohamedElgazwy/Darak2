@@ -11,7 +11,7 @@ const PAGES_CONFIG = [
   { id: 2, name: "الإعلانات", path: "/announcements" },
   { id: 3, name: "عن الشركة", path: "/about" },
   { id: 4, name: "الخدمات", path: "/services" },
-  { id: 6, name: "آراء العملاء", path: "/feedback" }, // تم ترتيبها لتكون قبل تواصل معنا
+  { id: 6, name: "آراء العملاء", path: "/feedback" }, 
   { id: 7, name: "فريق العمل", path: "/team" },
   { id: 5, name: "تواصل معنا", path: "/contact" },
 ];
@@ -28,7 +28,7 @@ const THEMES = {
     accent: "bg-blue-600 text-white hover:bg-blue-700"
   },
   Dark: {
-    bg: "bg-[#111827]", // رمادي داكن ليلي
+    bg: "bg-[#111827]",
     text: "text-slate-100",
     navBg: "bg-[#1f2937]/95",
     navBorder: "border-slate-800",
@@ -37,8 +37,8 @@ const THEMES = {
     accent: "bg-amber-500 text-slate-900 hover:bg-amber-400"
   },
   Classic: {
-    bg: "bg-[#f8f5f0]", // لون بيج/كريمي كلاسيكي
-    text: "text-[#3b2b1c]", // بني داكن للنصوص
+    bg: "bg-[#f8f5f0]",
+    text: "text-[#3b2b1c]",
     navBg: "bg-[#f4ece1]/95",
     navBorder: "border-[#d8cbb8]",
     linkHover: "hover:text-[#8c6b4a]",
@@ -56,34 +56,38 @@ export default function CompanyStorefrontLayout({ children }) {
   const [storeData, setStoreData] = useState(null);
   const { setTemplateId, setCompanyName } = useCompanyTheme();
 
-    useEffect(() => {
-      const fetchStoreData = async () => {
-        try {
-          const { userService } = await import("@/app/services");
-          const profile = await userService.getProfile(companyId);
+  useEffect(() => {
+    const fetchStoreData = async () => {
+      try {
+        const { userService } = await import("@/app/services");
+        const profile = await userService.getProfile(companyId);
 
-          const companyName = profile?.companyName || `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim() || 'شركة دارك العقارية';
-          // map numeric templateId to theme name
-          const tpl = Number(profile?.templateId || 1);
-          const theme = tpl === 2 ? 'Classic' : tpl === 3 ? 'Dark' : 'Bright';
+        const companyName = profile?.companyName || `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim() || 'شركة دارك العقارية';
+        
+        // 💡 استخراج اللوجو من الـ Profile
+        const logo = profile?.logo || null;
 
-          // availablePages may come from profile.subscription or template; fall back to all pages
-          const availablePages = profile?.availablePages || profile?.avaliablePages || [1,2,3,4,5,6,7];
+        const tpl = Number(profile?.templateId || 1);
+        const theme = tpl === 2 ? 'Classic' : tpl === 3 ? 'Dark' : 'Bright';
 
-          setStoreData({ companyName, theme, availablePages });
-          if (typeof setTemplateId === 'function') setTemplateId(Number(profile?.templateId || 1));
-          if (typeof setCompanyName === 'function') setCompanyName(companyName);
-          setLoading(false);
-        } catch (e) {
-          setStoreData({ companyName: 'شركة دارك العقارية', theme: 'Bright', availablePages: [1,2,3,4,5,6,7] });
-          if (typeof setTemplateId === 'function') setTemplateId(1);
-          if (typeof setCompanyName === 'function') setCompanyName('شركة دارك العقارية');
-          setLoading(false);
-        }
-      };
+        const availablePages = profile?.availablePages || profile?.avaliablePages || [1,2,3,4,5,6,7];
 
-      fetchStoreData();
-    }, [companyId]);
+        // 💡 إضافة اللوجو إلى الـ State
+        setStoreData({ companyName, theme, availablePages, logo });
+        
+        if (typeof setTemplateId === 'function') setTemplateId(Number(profile?.templateId || 1));
+        if (typeof setCompanyName === 'function') setCompanyName(companyName);
+        setLoading(false);
+      } catch (e) {
+        setStoreData({ companyName: 'شركة دارك العقارية', theme: 'Bright', availablePages: [1,2,3,4,5,6,7], logo: null });
+        if (typeof setTemplateId === 'function') setTemplateId(1);
+        if (typeof setCompanyName === 'function') setCompanyName('شركة دارك العقارية');
+        setLoading(false);
+      }
+    };
+
+    fetchStoreData();
+  }, [companyId]);
 
   if (loading) {
     return (
@@ -95,33 +99,38 @@ export default function CompanyStorefrontLayout({ children }) {
 
   if (!storeData) return <div className="text-center p-20">عفواً، الشركة غير موجودة أو غير مفعلة.</div>;
 
-  // استخراج التصميم المختار (ووضع Bright كافتراضي لو حدث خطأ)
   const activeTheme = THEMES[storeData.theme] || THEMES.Bright;
-
-  // تصفية الروابط لتشمل فقط الصفحات المتاحة في اشتراك الشركة
   const allowedNavLinks = PAGES_CONFIG.filter(page => storeData.availablePages.includes(page.id));
-
-  // الرابط الأساسي للشركة لتركيبه مع مسارات الصفحات
   const basePath = `/company/${companyId}`;
 
   return (
-    // 💡 تطبيق لون الخلفية والنصوص العام على كامل الموقع بناءً على الـ Theme
     <div className={`min-h-screen transition-colors duration-500 font-sans ${activeTheme.bg} ${activeTheme.text}`} dir="rtl">
       
-      {/* ── شريط التنقل (Navbar) ── */}
       <header className={`sticky top-0 z-50 backdrop-blur-sm border-b transition-colors duration-500 ${activeTheme.navBg} ${activeTheme.navBorder}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             
-            {/* لوجو / اسم الشركة */}
+            {/* ── لوجو / اسم الشركة ── */}
             <div className="flex-shrink-0 flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${activeTheme.accent}`}>
-                {storeData.companyName.charAt(0)}
+              {/* 💡 التعديل هنا: عرض الصورة إذا كانت موجودة، وإلا عرض الحرف الأول */}
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg overflow-hidden shadow-sm ${!storeData.logo ? activeTheme.accent : 'bg-transparent border border-current border-opacity-10'}`}>
+                {storeData.logo ? (
+                  <img
+                    src={
+                      storeData.logo.startsWith("data:")
+                        ? storeData.logo
+                        : `data:image/jpeg;base64,${storeData.logo}`
+                    }
+                    alt={storeData.companyName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  storeData.companyName.charAt(0)
+                )}
               </div>
               <span className="font-black text-xl tracking-tight">{storeData.companyName}</span>
             </div>
 
-            {/* روابط التنقل (Desktop) */}
             <nav className="hidden md:flex space-x-8 space-x-reverse">
               {allowedNavLinks.map((link) => {
                 const fullPath = `${basePath}${link.path}`;
@@ -141,7 +150,6 @@ export default function CompanyStorefrontLayout({ children }) {
               })}
             </nav>
 
-            {/* زر اتصل بنا إضافي أو زر القائمة للموبايل */}
             <div className="flex items-center">
               {storeData.availablePages.includes(5) && (
                 <Link 
@@ -157,9 +165,7 @@ export default function CompanyStorefrontLayout({ children }) {
         </div>
       </header>
 
-      {/* ── محتوى الصفحة (Children) ── */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* سيتم حقن صفحات (Home, About, Services, etc...) هنا وسيرثون ألوان الـ Theme تلقائياً */}
         {children}
       </main>
 

@@ -12,11 +12,17 @@ export const companyService = {
       }
       throw err;
     }
-  }
-  ,
+  },
+  
   // جلب الشركات بنمط Paginated (دعم للحصول على صفحات من الـ API)
   getPaginated: async (params) => {
     const res = await api.get("/Companies/Paginated", { params });
+    return res.data;
+  },
+
+  // جلب البيانات التعريفية (About) لشركة معينة مباشرة
+  getCompanyAbout: async (companyId) => {
+    const res = await api.get(`/companies/${companyId}/about`);
     return res.data;
   }
 };

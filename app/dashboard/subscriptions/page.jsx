@@ -43,6 +43,14 @@ export default function SubscriptionsPage() {
     return res;
   };
 
+  const getTemplateImage = (tpl) => {
+    const name = (tpl?.name || "").toLowerCase();
+    if (name.includes("modern") || name.includes("bright")) return "/images/bright.png";
+    if (name.includes("classic")) return "/images/classic.png";
+    if (name.includes("luxury") || name.includes("night") || name.includes("dark")) return "/images/night.png";
+    return "/images/placeholder-property.jpg";
+  };
+
   // دالة مساعدة لترجمة الخطأ
   const getErrorMessage = (errString) => {
     if (!errString) return ERROR_MESSAGES.DEFAULT;
@@ -220,6 +228,9 @@ export default function SubscriptionsPage() {
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
                       </div>
                     )}
+                    <div className="mb-4 rounded-xl overflow-hidden">
+                      <img src={getTemplateImage(tpl)} alt={tpl.name} className="w-full h-40 object-cover" />
+                    </div>
                     <h4 className="font-bold text-lg text-slate-900">{tpl.name}</h4>
                     <p className="text-sm text-slate-500 mt-2 line-clamp-2">{tpl.description}</p>
                   </div>

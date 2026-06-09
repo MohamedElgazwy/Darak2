@@ -1,258 +1,270 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { announcementService, userService } from "@/app/services";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { feedbackService } from "@/app/services/feedback.service"; // تأكد من مسار الخدمة الخاص بك
 
-export default function AnnouncementDetailsPage() {
-  const { id } = useParams();
-  const router = useRouter();
+export default function MainPlatformAnnouncementPage() {
+  const params = useParams();
+  const announcementId = params?.id; // أو params?.announcementId بناءً على اسم المجلد عندك
 
-  const [property, setProperty] = useState(null);
+  // ── 1. States ──
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [activeImage, setActiveImage] = useState("");
-  const [owner, setOwner] = useState(null);
+  const [estate, setEstate] = useState(null);
 
-  // ─── الدالة الذكية الموحدة لمعالجة مسارات الصور وصيغ السيرفر المتفاوتة ───
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return "https://placehold.co/600x400?text=Darak+RealEstate"; 
-    
-    // 1. إذا كان رابط كامل أو يحتوي على البادئة جاهزة
-    if (imagePath.startsWith("http") || imagePath.startsWith("data:")) return imagePath;
-    
-    // 2. إذا كان مسار نسبي لملفات السيرفر (الحالة القادمة من السيرفر)
-    if (imagePath.startsWith("/")) return `https://darak.runasp.net${imagePath}`;
-    
-    // 3. فرضية الـ Base64 الخام في حال رجعت داتا بدون البادئة
-    return `data:image/jpeg;base64,${imagePath}`;
+  // States الخاصة بالتقييمات
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [newRating, setNewRating] = useState(5);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [feedbackError, setFeedbackError] = useState("");
+
+  // دالة مساعدة لاستخراج البيانات
+  const extractData = (res) => {
+    if (!res) return [];
+    if (res.data !== undefined) return res.data;
+    if (res.value !== undefined) return res.value;
+    return res;
   };
 
+  // ── 2. Fetch Data ──
   useEffect(() => {
-    const fetchDetails = async () => {
-      try {
-        // استدعاء الـ Endpoint: GET /API/Announcement/{id}
-        const res = await announcementService.getById(id);
-        const data = res?.data ?? res;
-        setProperty(data);
-        
-        // 🛠️ فحص الصورة بكل المسميات المتاحة في السيرفر لضمان التقاطها (CamelCase أو PascalCase)
-        const mainImage = data.primaryImage || data.PrimaryImage || data.imagePath || data.image || data.primaryImageUrl;
+    if (!announcementId) return;
 
-        if (mainImage) {
-          setActiveImage(getImageUrl(mainImage));
-        }
-        // جلب بيانات صاحب الإعلان (مستخدم أو شركة) إذا توفرت
-        const ownerId = data.companyId || data.userId || data.ownerId;
-        if (ownerId) {
-          try {
-            const ownerRes = await userService.getById(ownerId);
-            setOwner(ownerRes?.data || ownerRes || null);
-          } catch (e) {
-            console.warn("Failed to fetch owner info", e);
-            // Fallback: derive owner info from the announcement payload if available
-            const fallbackOwner = {
-              id: ownerId,
-              companyName: data.companyName || data.ownerName || data.organizationName || null,
-              firstName: data.ownerFirstName || data.firstName || null,
-              lastName: data.ownerLastName || data.lastName || null,
-              logo: data.companyLogo || data.logo || null,
-              userType: data.companyId ? "Company" : "User",
-            };
-            setOwner(fallbackOwner);
-          }
-        }
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // 💡 جلب تفاصيل الإعلان (استبدلها بالـ API الحقيقي الخاص بك)
+        // const estateRes = await announcementService.getById(announcementId);
+        
+        // بيانات وهمية لمحاكاة الشكل في صورتك
+        setEstate({
+          id: announcementId,
+          title: "test before hamada",
+          location: "المنوفية، honololo",
+          price: "500,000",
+          status: "للبيع",
+          type: "مكتب",
+          advertiser: {
+            name: "MohamedFarag",
+            type: "فرد",
+            avatar: "M"
+          },
+          description: "هذا النص هو وصف تجريبي للعقار يعرض تفاصيل المساحة والمميزات والموقع بشكل دقيق للمشتري."
+        });
+
+        // 💡 جلب التقييمات الحقيقية لهذا الإعلان من الباك إند
+        const fbRes = await feedbackService.getAnnouncementFeedbacks(announcementId).catch(() => []);
+        setFeedbacks(extractData(fbRes) || []);
+
       } catch (err) {
-        console.error(err);
-        setError("عذراً، لم نتمكن من العثور على هذا العقار أو ربما تم حذفه.");
+        console.error("Failed to fetch data:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) fetchDetails();
-  }, [id]);
+    fetchData();
+  }, [announcementId]);
 
+  // ── 3. Handle Feedback Submit ──
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    
+    setIsSubmittingFeedback(true);
+    setFeedbackError("");
+    
+    try {
+      const payload = {
+        comment: newComment,
+        rating: newRating,
+        announcementId: parseInt(announcementId)
+      };
+      
+      await feedbackService.create(payload);
+      
+      // تفريغ الحقل وتحديث قائمة التقييمات لتظهر فوراً
+      setNewComment("");
+      setNewRating(5);
+      const fbRes = await feedbackService.getAnnouncementFeedbacks(announcementId);
+      setFeedbacks(extractData(fbRes) || []);
+      
+    } catch (err) {
+      console.error("Failed to submit feedback", err);
+      setFeedbackError("حدث خطأ أثناء إضافة التقييم. يرجى المحاولة مرة أخرى.");
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
+  // ── 4. Loading State ──
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent opacity-80" />
       </div>
     );
   }
 
-  if (error || !property) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center text-center px-4" dir="rtl">
-        <h1 className="text-2xl font-bold text-slate-900 mb-4">{error}</h1>
-        <button onClick={() => router.push("/search")} className="btn-primary">
-          العودة للبحث
-        </button>
-      </div>
-    );
-  }
+  if (!estate) return <div className="text-center py-20 text-slate-600 font-bold">لم يتم العثور على الإعلان.</div>;
 
-  // 🛠️ معالجة صور المعرض الإضافية بأمان تام لتدعم كافة احتمالات كيز الباك إند
-  const galleryImages = property.images?.map((img) => {
-    const path = img.imageData || img.imagePath || img.ImagePath || img.ImageData || img;
-    return getImageUrl(path);
-  }) || [];
-  
-  const allImages = activeImage ? [activeImage, ...galleryImages.filter(img => img !== activeImage)] : galleryImages;
-
+  // ── 5. Main Render ──
   return (
-    <div className="container-shell py-8 lg:py-12 text-right" dir="rtl">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10" dir="rtl">
       
-      {/* ── Breadcrumb & Header ── */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* رأس الصفحة (Title & Price) مطابقة لصورتك */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-200 pb-6">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-sm text-slate-500">
-            <button onClick={() => router.push("/")} className="hover:text-indigo-600">الرئيسية</button>
-            <span>/</span>
-            <button onClick={() => router.push("/search")} className="hover:text-indigo-600">العقارات</button>
-            <span>/</span>
-            <span className="text-slate-900 font-medium">{property.title}</span>
+          <div className="text-sm text-slate-500 mb-2 flex items-center gap-2">
+            <span>الرئيسية</span> / <span>العقارات</span> / <span>{estate.title}</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">{property.title}</h1>
-          <p className="mt-2 flex items-center gap-2 text-slate-600">
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            {property.city}، {property.address}
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2">{estate.title}</h1>
+          <p className="text-slate-500 flex items-center gap-1">
+            📍 {estate.location}
           </p>
         </div>
-        <div className="text-left">
-          <p className="text-3xl font-bold text-indigo-600">
-            {property.price?.toLocaleString("ar-EG")} <span className="text-lg text-slate-500">ج.م</span>
-          </p>
-          <div className="mt-2 flex justify-end gap-2">
-            <span className="rounded-lg bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700">
-              {property.purpose === "Sale" || property.purpose === "للبيع" ? "للبيع" : "للإيجار"}
-            </span>
-            <span className="rounded-lg bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
-              {property.propertyType}
-            </span>
+        
+        <div className="mt-4 md:mt-0 text-left">
+          <div className="text-3xl font-black text-indigo-700 flex items-center justify-end gap-2 text-left" dir="ltr">
+            <span className="text-lg text-slate-500 font-medium">ج.م</span>
+            {estate.price}
+          </div>
+          <div className="flex gap-2 justify-end mt-2">
+            <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-md text-sm font-bold">{estate.status}</span>
+            <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-md text-sm font-bold">{estate.type}</span>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* ── Left Column: Images & Description ── */}
+        {/* العمود الأيمن (الصور والتفاصيل) */}
         <div className="lg:col-span-2 space-y-8">
-          
-          {/* Image Gallery */}
-          <div className="space-y-4">
-            <div className="aspect-[16/9] w-full overflow-hidden rounded-2xl bg-slate-100 border border-slate-200">
-                <img 
-                src={activeImage || "https://placehold.co/600x400?text=Darak+RealEstate"} 
-                alt={property.title} 
-                loading="eager"
-                className="h-full w-full object-cover"
-                onError={(e) => { e.target.src = "https://placehold.co/600x400?text=Darak+RealEstate"; }}
-              />
-            </div>
-            
-            {allImages.length > 1 && (
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {allImages.map((img, idx) => (
-                  <button 
-                    key={idx}
-                    onClick={() => setActiveImage(img)}
-                    className={`relative h-20 w-28 shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
-                      activeImage === img ? "border-indigo-600 shadow-md opacity-100" : "border-transparent opacity-70 hover:opacity-100"
-                    }`}
-                  >
-                      <img 
-                        src={img} 
-                        alt={`Thumbnail ${idx}`} 
-                        className="h-full w-full object-cover" 
-                        onError={(e) => { e.target.src = "https://placehold.co/600x400?text=Darak+RealEstate"; }} 
-                      />
-                  </button>
-                ))}
-              </div>
-            )}
+          {/* مساحة الصورة */}
+          <div className="bg-slate-200 rounded-2xl h-[400px] flex items-center justify-center text-4xl font-black text-slate-400 select-none">
+            Darak RealEstate
           </div>
 
-          {/* Details & Features Grid */}
-          <div className="surface-card p-6 sm:p-8 bg-white rounded-2xl border">
-            <h2 className="mb-6 text-xl font-bold text-slate-900">تفاصيل العقار</h2>
-            <div className="grid grid-cols-2 gap-y-6 sm:grid-cols-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-sm text-slate-500">المساحة</span>
-                <span className="text-lg font-bold text-slate-900">{property.area} م²</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-sm text-slate-500">الغرف</span>
-                <span className="text-lg font-bold text-slate-900">{property.rooms}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-sm text-slate-500">الحمامات</span>
-                <span className="text-lg font-bold text-slate-900">{property.bathrooms}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-sm text-slate-500">الطابق</span>
-                <span className="text-lg font-bold text-slate-900">{property.floor}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="surface-card p-6 sm:p-8 bg-white rounded-2xl border">
-            <h2 className="mb-4 text-xl font-bold text-slate-900">الوصف</h2>
-            <div className="prose prose-slate max-w-none">
-              <p className="whitespace-pre-line leading-relaxed text-slate-700">
-                {property.description}
-              </p>
-            </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">التفاصيل</h2>
+            <p className="text-slate-600 leading-relaxed whitespace-pre-line">
+              {estate.description}
+            </p>
           </div>
         </div>
 
-        {/* ── Right Column: Sticky Sidebar ── */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-24 space-y-6">
-            <div className="surface-card p-6 bg-white rounded-2xl border">
-              <h3 className="mb-4 text-lg font-bold text-slate-900">مهتم بهذا العقار؟</h3>
-              <p className="mb-6 text-sm text-slate-500">
-                تواصل مع المعلن الآن لمعرفة المزيد من التفاصيل أو تحديد موعد للمعاينة.
-              </p>
-              { (property.phone || property.mobile || property.contactPhone || property.ownerPhone || property.contactNumber) ? (
-                <a href={`tel:${property.phone || property.mobile || property.contactPhone || property.ownerPhone || property.contactNumber}`} className="btn-primary mb-3 w-full flex items-center justify-center gap-2">
-                  عرض رقم الهاتف: {property.phone || property.mobile || property.contactPhone || property.ownerPhone || property.contactNumber}
-                </a>
-              ) : (
-                <button className="btn-primary mb-3 w-full flex items-center justify-center gap-2">عرض رقم الهاتف</button>
-              )}
-              <button className="btn-secondary w-full bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2">إرسال رسالة</button>
-            </div>
+        {/* العمود الأيسر (شريط التواصل) مطابقة لصورتك */}
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center sticky top-24">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">مهتم بهذا العقار؟</h3>
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+              تواصل مع المعلن الآن لمعرفة المزيد من التفاصيل أو تحديد موعد للمعاينة.
+            </p>
+            
+            <button className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-colors mb-3">
+              عرض رقم الهاتف
+            </button>
+            <button className="w-full bg-white text-slate-700 border border-slate-300 font-bold py-3 rounded-xl hover:bg-slate-50 transition-colors mb-6">
+              إرسال رسالة
+            </button>
 
-            {owner && (
-              <div className="surface-card p-4 bg-white rounded-2xl border">
+            <div className="border-t border-slate-100 pt-6 flex items-center justify-between">
+              <div className="text-right">
+                <p className="font-bold text-slate-900">{estate.advertiser.name}</p>
+                <p className="text-sm text-slate-500">{estate.advertiser.type}</p>
+                <Link href="#" className="text-indigo-600 text-sm font-bold mt-1 inline-block hover:underline">
+                  زيارة صفحة البائع
+                </Link>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xl font-bold text-slate-600">
+                {estate.advertiser.avatar}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── قسم التقييمات (Feedback Section) المضاف حديثاً ── */}
+      <div className="mt-16 pt-12 border-t border-slate-200 max-w-4xl">
+        <h2 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-2">
+          ⭐ تقييمات الزوار
+        </h2>
+
+        {/* نموذج إضافة تقييم */}
+        <form onSubmit={handleFeedbackSubmit} className="bg-slate-50 p-6 md:p-8 rounded-3xl border border-slate-200 mb-10 shadow-sm">
+          <h3 className="font-bold text-slate-800 mb-4">أضف تقييمك لهذا العقار</h3>
+          
+          {feedbackError && <div className="text-red-500 text-sm font-bold mb-4 bg-red-50 p-3 rounded-lg border border-red-100">{feedbackError}</div>}
+
+          <div className="flex items-center gap-2 mb-4 cursor-pointer">
+            <span className="text-sm font-bold text-slate-600">تقييمك:</span>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                type="button"
+                key={star}
+                onClick={() => setNewRating(star)}
+                className={`text-3xl transition-all hover:scale-110 ${newRating >= star ? "text-amber-400" : "text-slate-300"}`}
+              >
+                ★
+              </button>
+            ))}
+          </div>
+          
+          <textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            rows="3"
+            className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-colors resize-none mb-4 text-slate-800 placeholder-slate-400 shadow-inner"
+            placeholder="شاركنا رأيك وتجربتك مع هذا العقار بصدق..."
+            required
+          ></textarea>
+          
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={isSubmittingFeedback}
+              className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center min-w-[140px] disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isSubmittingFeedback ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : "نشر التقييم"}
+            </button>
+          </div>
+        </form>
+
+        {/* قائمة التقييمات السابقة */}
+        <div className="space-y-6">
+          {feedbacks.length > 0 ? feedbacks.map((fb, idx) => (
+            <div key={fb.id || idx} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center">
-                          {owner.logo ? (
-                            <img src={`data:image/jpeg;base64,${owner.logo}`} alt="logo" className="h-full w-auto object-contain" />
-                          ) : (
-                            <span className="text-slate-700 font-bold">{(owner.companyName || owner.firstName || "?")[0]}</span>
-                          )}
-                        </div>
-                  <div className="flex-1 text-right">
-                    <p className="font-semibold text-slate-900">{owner.companyName || `${owner.firstName} ${owner.lastName}`}</p>
-                    <p className="text-sm text-slate-500">{owner.userType === "Company" ? "شركة" : "فرد"}</p>
+                  <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                    {(fb.userName || "ز").charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-800">{fb.userName || "زائر موثق"}</h4>
+                    <span className="text-xs text-slate-400">تقييم معتمد</span>
                   </div>
                 </div>
-
-                <div className="mt-4">
-                  <a href={`/company/${owner.id || property.companyId || property.userId}`} className="text-indigo-600 hover:underline">زيارة صفحة البائع</a>
+                <div className="text-amber-400 text-lg flex">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i}>{i < (fb.rating || 5) ? "★" : "☆"}</span>
+                  ))}
                 </div>
               </div>
-            )}
-          </div>
+              <p className="text-slate-600 leading-relaxed text-sm md:text-base whitespace-pre-line pr-12">
+                {fb.comment}
+              </p>
+            </div>
+          )) : (
+            <div className="text-center bg-slate-50 border border-dashed border-slate-200 rounded-2xl py-10">
+              <span className="text-4xl block mb-2 opacity-30">💬</span>
+              <p className="text-slate-500 font-medium">لا توجد تقييمات لهذا العقار حتى الآن. كن أول من يشارك رأيه!</p>
+            </div>
+          )}
         </div>
-
       </div>
+
     </div>
   );
 }

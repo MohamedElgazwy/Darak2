@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { companyAboutService, userService } from "@/app/services";
+import { companyService, userService } from "@/app/services";
 
 export default function CompanyAboutPage() {
   const params = useParams();
@@ -21,30 +21,25 @@ export default function CompanyAboutPage() {
       setError(null);
 
       try {
-        // 1. Fetch company profile for name/logo display
-        const profileRes = await userService.getProfile(companyId);
+        const profileRes = await userService.getProfile(companyId).catch(() => null);
         const companyInfo = profileRes?.data || profileRes;
         setCompany(companyInfo);
 
-        // 2. Fetch ALL company abouts — no filter endpoint exists in the API
-        //    so we fetch the full list and match by companyId / userId
-        const aboutRes = await companyAboutService.getList();
-        const aboutList = Array.isArray(aboutRes?.data)
-          ? aboutRes.data
-          : Array.isArray(aboutRes)
-          ? aboutRes
-          : [];
+        const aboutRes = await companyService.getCompanyAbout(companyId);
+        const aboutInfo = aboutRes?.data || aboutRes?.value || aboutRes;
 
-        const matched = aboutList.find(
-          (item) =>
-            String(item.companyId) === String(companyId) ||
-            String(item.userId) === String(companyId)
-        );
-
-        setAboutData(matched || null);
+        if (aboutInfo && (aboutInfo.description || aboutInfo.vision || aboutInfo.mission)) {
+          setAboutData(aboutInfo);
+        } else {
+          setAboutData(null);
+        }
       } catch (err) {
         console.error("Failed to load company about:", err);
-        setError("تعذّر تحميل بيانات الشركة.");
+        if (err?.response?.status === 404) {
+          setAboutData(null);
+        } else {
+          setError("تعذّر تحميل بيانات الشركة.");
+        }
       } finally {
         setLoading(false);
       }
@@ -53,19 +48,17 @@ export default function CompanyAboutPage() {
     fetchAbout();
   }, [companyId]);
 
-  // ── Loading ──
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-current border-t-transparent opacity-40" />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-400 border-t-transparent opacity-60" />
           <p className="text-sm font-medium opacity-60">جاري تحميل بيانات الشركة...</p>
         </div>
       </div>
     );
   }
 
-  // ── Error ──
   if (error) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
@@ -81,7 +74,6 @@ export default function CompanyAboutPage() {
     );
   }
 
-  // ── No data ──
   if (!aboutData) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center">
@@ -101,14 +93,12 @@ export default function CompanyAboutPage() {
     <div className="space-y-20 pb-20" dir="rtl">
 
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-current bg-opacity-5 border border-current border-opacity-10 p-10 md:p-16">
-        {/* decorative blobs */}
-        <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-current opacity-[0.04] blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-current opacity-[0.04] blur-3xl" />
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-500/10 border border-slate-500/20 p-10 md:p-16">
+        <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-slate-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-slate-500/10 blur-3xl" />
 
         <div className="relative z-10 max-w-3xl mx-auto text-center space-y-6">
-          {/* Company logo / initials */}
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-current bg-opacity-10 border border-current border-opacity-20 shadow-sm overflow-hidden">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-500/20 border border-slate-500/30 shadow-sm overflow-hidden">
             {company?.logo ? (
               <img
                 src={
@@ -127,7 +117,7 @@ export default function CompanyAboutPage() {
           </div>
 
           <div>
-            <p className="text-sm font-bold opacity-50 mb-2 tracking-widest uppercase">
+            <p className="text-sm font-bold opacity-60 mb-2 tracking-widest uppercase">
               من نحن
             </p>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
@@ -135,11 +125,13 @@ export default function CompanyAboutPage() {
             </h1>
           </div>
 
-          <div className="w-16 h-1 bg-current opacity-20 mx-auto rounded-full" />
+          <div className="w-16 h-1 bg-slate-500/30 mx-auto rounded-full" />
 
-          <p className="text-lg md:text-xl opacity-70 leading-relaxed max-w-2xl mx-auto">
-            {aboutData.description}
-          </p>
+          {aboutData.description && (
+            <p className="text-lg md:text-xl opacity-80 leading-relaxed max-w-2xl mx-auto whitespace-pre-line">
+              {aboutData.description}
+            </p>
+          )}
         </div>
       </div>
 
@@ -152,10 +144,10 @@ export default function CompanyAboutPage() {
         ].map((s) => (
           <div
             key={s.label}
-            className="bg-current bg-opacity-5 border border-current border-opacity-10 rounded-2xl py-6 px-4"
+            className="bg-slate-500/10 border border-slate-500/20 rounded-2xl py-6 px-4"
           >
             <div className="text-3xl font-black mb-1">{s.num}</div>
-            <div className="text-xs font-bold opacity-50">{s.label}</div>
+            <div className="text-xs font-bold opacity-60">{s.label}</div>
           </div>
         ))}
       </div>
@@ -191,25 +183,25 @@ export default function CompanyAboutPage() {
           ].map((item) => (
             <div
               key={item.title}
-              className="bg-current bg-opacity-5 border border-current border-opacity-10 rounded-2xl p-6 hover:border-opacity-25 transition-colors"
+              className="bg-slate-500/10 border border-slate-500/20 rounded-2xl p-6 hover:bg-slate-500/20 transition-colors"
             >
               <div className="text-3xl mb-4">{item.icon}</div>
               <h3 className="font-bold text-base mb-2">{item.title}</h3>
-              <p className="text-sm opacity-70 leading-relaxed">{item.desc}</p>
+              <p className="text-sm opacity-80 leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* ── CTA ── */}
-      <div className="text-center pt-8 border-t border-current border-opacity-10">
+      <div className="text-center pt-8 border-t border-slate-500/20">
         <h3 className="text-2xl font-bold mb-3">جاهز لبدء رحلتك العقارية؟</h3>
-        <p className="opacity-60 mb-8 text-sm max-w-md mx-auto leading-relaxed">
+        <p className="opacity-70 mb-8 text-sm max-w-md mx-auto leading-relaxed">
           فريقنا متاح للإجابة على جميع استفساراتك وتقديم أفضل الاستشارات المجانية.
         </p>
         <Link
           href={`/company/${companyId}/contact`}
-          className="inline-block bg-current text-white dark:text-slate-900 invert dark:invert-0 px-10 py-4 rounded-xl font-bold hover:opacity-80 transition-opacity shadow-lg"
+          className="inline-block bg-indigo-600 text-white px-10 py-4 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg"
         >
           تواصل معنا الآن
         </Link>
@@ -220,12 +212,12 @@ export default function CompanyAboutPage() {
 
 function VisionMissionCard({ icon, title, text }) {
   return (
-    <div className="bg-current bg-opacity-5 p-8 rounded-[2rem] border border-current border-opacity-10 hover:border-opacity-25 transition-colors space-y-4">
-      <div className="w-14 h-14 bg-current bg-opacity-10 rounded-2xl flex items-center justify-center text-2xl shadow-sm">
+    <div className="bg-slate-500/10 p-8 rounded-[2rem] border border-slate-500/20 hover:bg-slate-500/20 transition-colors space-y-4">
+      <div className="w-14 h-14 bg-slate-500/20 rounded-2xl flex items-center justify-center text-2xl shadow-sm">
         {icon}
       </div>
       <h3 className="text-xl font-bold">{title}</h3>
-      <p className="opacity-75 leading-relaxed text-sm">{text}</p>
+      <p className="opacity-80 leading-relaxed text-sm whitespace-pre-line">{text}</p>
     </div>
   );
 }
