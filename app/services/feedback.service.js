@@ -1,35 +1,26 @@
 import api from "./api";
 
 export const feedbackService = {
-  // جلب تقييمات شركة معينة (شهادات العملاء للصفحة العامة)
-  getCompanyTestimonials: async (companyId) => {
-    const res = await api.get(`/Feedback/Company/${companyId}/testimonials`);
-    return res.data;
+  create: async (data) => {
+    const res = await api.post("/Feedback/Create", data);
+    return res?.data || res;
   },
-
-  // جلب تقييمات إعلان عقاري معين
-  getAnnouncementFeedbacks: async (announcementId) => {
-    const res = await api.get(`/Feedback/announcement/${announcementId}`);
-    return res.data;
+  // 💡 تمت إضافة دالة التعديل
+  update: async (data) => {
+    const res = await api.put("/Feedback/Update", data);
+    return res?.data || res;
   },
-
-  // إنشاء تقييم جديد
-  create: async (feedbackData) => {
-    // feedbackData = { comment: "string", rating: 0, announcementId: 0 }
-    const res = await api.post("/Feedback/Create", feedbackData);
-    return res.data;
-  },
-
-  // تعديل تقييم حالي
-  update: async (feedbackData) => {
-    // feedbackData = { id: 0, comment: "string", rating: 0 }
-    const res = await api.put("/Feedback/Update", feedbackData);
-    return res.data;
-  },
-
-  // حذف تقييم
+  // 💡 تمت إضافة دالة الحذف
   delete: async (id) => {
     const res = await api.delete(`/Feedback/${id}`);
-    return res.data;
+    return res?.data || res;
+  },
+  getCompanyTestimonials: async (companyId) => {
+    const res = await api.get(`/Feedback/Company/${companyId}/testimonials`);
+    return res?.data || res;
+  },
+  getAnnouncementFeedbacks: async (announcementId) => {
+    const res = await api.get(`/Feedback/announcement/${announcementId}`);
+    return res?.data || res;
   }
 };

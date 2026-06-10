@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { announcementService, companyAboutService, companyServicesService, userService, feedbackService } from "@/app/services";
+import { 
+  companyService, 
+  companyServicesService, 
+  userService, 
+  feedbackService 
+} from "@/app/services";
 import ClassicTheme from "@/app/components/company/themes/ClassicTheme";
 import DarkTheme from "@/app/components/company/themes/DarkTheme";
 import BrightTheme from "@/app/components/company/themes/BrightTheme";
 import { useCompanyTheme } from "@/app/context/CompanyThemeContext";
-
 
 export default function CompanyStorefrontPage() {
   const { companyId } = useParams();
@@ -17,7 +21,7 @@ export default function CompanyStorefrontPage() {
   const [announcements, setAnnouncements] = useState([]);
   const [about, setAbout] = useState(null);
   const [services, setServices] = useState([]);
-  const [testimonials, setTestimonials] = useState([]); // 👈 إضافة State للشهادات والتقييمات
+  const [testimonials, setTestimonials] = useState([]); 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,72 +32,59 @@ export default function CompanyStorefrontPage() {
         if (companyId && String(companyId).startsWith("company_node_")) {
           throw new Error("Synthetic ID detected.");
         }
+        
         const profileRes = await userService.getProfile(companyId);
-        companyInfo = profileRes;
+        companyInfo = profileRes?.data || profileRes?.value || profileRes;
 
         if (!companyInfo.companyName) {
-          companyInfo.companyName = `${companyInfo.firstName || ""} ${companyInfo.lastName || ""}`.trim() || "";
+          companyInfo.companyName = `${companyInfo.firstName || ""} ${companyInfo.lastName || ""}`.trim() || "وكالة عقارية";
         }
-        if (companyInfo.userType === "User") {
-          companyInfo.templateId = 3;
-        }
+        
+        // 🎯 سحب الإعلانات مباشرة من الـ Profile
+        setAnnouncements(companyInfo.announcementResponses || companyInfo.AnnouncementResponses || []);
+
       } catch (err) {
-        // لا تُنشئ بيانات اصطناعية عند فشل الجلب — نعيد كائن بسيط يشير إلى أن البيانات غير متاحة
-        companyInfo = {
-          id: companyId,
-          companyName: "",
-          templateId: 3,
-          description: ""
-        };
+        companyInfo = { id: companyId, companyName: "شركة عقارية", templateId: 1, description: "" };
+        setAnnouncements([]);
       }
 
       setCompanyData(companyInfo);
-      const targetTemplateId = companyInfo?.templateId || 3;
-          if (setTemplateId) setTemplateId(targetTemplateId);
-          if (typeof setCompanyName === 'function') setCompanyName(companyInfo?.companyName || companyInfo?.firstName || "شركة دارك العقارية");
-
-      // 1. جلب العقارات المرتبطة بالحساب
-      try {
-        const annRes = await announcementService.getPaginated({ PageNumber: 1, PageSize: 50 });
-        const allItems = annRes?.data?.items || annRes?.items || [];
-        setAnnouncements(allItems.filter(a => 
-          String(a.userId) === String(companyId) || 
-          String(a.companyId) === String(companyId) || 
-          (companyInfo.templateId === 2 && a.id === 26) || 
-          (companyInfo.templateId === 1 && a.id === 27)
-        ));
-      } catch (e) {}
-
-      // 2. جلب بيانات "عن الشركة" (CompanyAbouts)
-      try {
-        const aboutRes = await companyAboutService.getList();
-        const aboutList = aboutRes?.data || aboutRes || [];
-        const matched = aboutList.find(item => [item.companyId, item.userId].some(v => String(v) === String(companyId)));
-        setAbout(matched || { description: companyInfo.description || "نقدم خدمات عقارية متكاملة تلبي تطلعاتكم السكنية والاستثمارية." });
-      } catch (e) {
-        setAbout({ description: companyInfo.description });
+      
+      // 💡 التقاط رقم التمبلت من الباك إند (لو لم يرسله سيعتبره 1)
+      const targetTemplateId = Number(companyInfo?.templateId || 1);
+      if (setTemplateId) setTemplateId(targetTemplateId);
+      if (typeof setCompanyName === 'function') {
+        setCompanyName(companyInfo?.companyName || companyInfo?.firstName || "شركة دارك العقارية");
       }
 
-      // 3. جلب خدمات الشركة (CompanyServices)
+      // جلب بيانات "عن الشركة" 
       try {
-        const servRes = await companyServicesService.getList();
-        const servList = servRes?.data || servRes || [];
-        const matchedServices = servList.filter(item => [item.companyId, item.userId].some(v => String(v) === String(companyId)));
-        setServices(matchedServices.length > 0 ? matchedServices : [
-          { title: "إدارة وتسويق الوحدات", description: "نضمن تسويق عقارك بأسرع وقت ولأفضل فئة مستهدفة." },
-          { title: "استشارات عقارية مجانية", description: "نقدم دراسات جدوى شاملة وتحليل دقيق لاتجاهات أسواق العقار." }
-        ]);
-      } catch (e) {}
-
-      // 4. ⚡ جلب تقييمات وآراء العملاء الحقيقية للشركة (Testimonials)
-      try {
-        if (!String(companyId).startsWith("company_node_")) {
-          const testRes = await feedbackService.getCompanyTestimonials(companyId);
-          setTestimonials(testRes?.data || testRes || []);
+        const aboutRes = await companyService.getCompanyAbout(companyId);
+        const aboutInfo = aboutRes?.data || aboutRes?.value || aboutRes;
+        if (aboutInfo && (aboutInfo.description || aboutInfo.vision)) {
+          setAbout(aboutInfo);
         } else {
-          // لا نعرض بيانات تجريبية افتراضية — اترك القائمة فارغة عند عدم توافر تقييمات حقيقية
-          setTestimonials([]);
+          setAbout({ description: companyInfo?.description || "نقدم أفضل الخدمات العقارية التي تلبي طموحاتك للاستثمار والسكن المريح." });
         }
+      } catch (e) {
+        setAbout({ description: "نقدم أفضل الخدمات العقارية التي تلبي طموحاتك للاستثمار والسكن المريح." });
+      }
+
+      // جلب خدمات الشركة 
+      try {
+        const servRes = await companyServicesService.getCompanyServices(companyId);
+        const matchedServices = servRes?.data || servRes?.value || servRes || [];
+        setServices(matchedServices.length > 0 ? matchedServices : [
+          { title: "إدارة وتسويق الوحدات", description: "نضمن تسويق عقارك بأسرع وقت ولأفضل فئة مستهدفة.", icon: "🏢" }
+        ]);
+      } catch (e) {
+        setServices([]);
+      }
+
+      // جلب تقييمات العملاء
+      try {
+        const testRes = await feedbackService.getCompanyTestimonials(companyId);
+        setTestimonials(testRes?.data || testRes?.value || testRes || []);
       } catch (e) {
         setTestimonials([]);
       }
@@ -106,27 +97,26 @@ export default function CompanyStorefrontPage() {
     return () => {
       if (setTemplateId) setTemplateId(null);
     };
-  }, [companyId, setTemplateId]);
+  }, [companyId, setTemplateId, setCompanyName]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      <div className="min-h-[70vh] flex items-center justify-center bg-transparent">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent shadow-md" />
+          <p className="text-sm font-bold text-slate-500 animate-pulse">جاري تحميل المعرض العقاري للشركة...</p>
+        </div>
       </div>
     );
   }
 
-  // تضمين الـ testimonials داخل الخصائص الممررة للقوالب
   const themeProps = { company: companyData, announcements, about, services, testimonials };
 
-  // Map templates: 1 (Modern) -> Bright, 2 (Classic) -> Classic, 3 (Luxury) -> Dark
-  switch (companyData?.templateId) {
-    case 3:
-      return <DarkTheme {...themeProps} />;
-    case 2:
-      return <ClassicTheme {...themeProps} />;
+  // توجيه التصميم بناء على اختيار الشركة (إذا لم يرسل الباك إند، سيتم عرض Bright)
+  switch (Number(companyData?.templateId || 1)) {
+    case 3: return <DarkTheme {...themeProps} />;
+    case 2: return <ClassicTheme {...themeProps} />;
     case 1:
-    default:
-      return <BrightTheme {...themeProps} />;
+    default: return <BrightTheme {...themeProps} />;
   }
 }

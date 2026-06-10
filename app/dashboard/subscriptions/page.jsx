@@ -1,6 +1,5 @@
 "use client";
 
-
 import { ProtectedRoute } from "@/app/lib/guards";
 import { subscriptionService } from "@/app/services";
 import { useEffect, useState } from "react";
@@ -15,12 +14,11 @@ const PAGE_NAMES = {
   7: "فريق العمل",
 };
 
-// 💡 قاموس ترجمة أخطاء الخادم إلى رسائل عربية مفهومة
 const ERROR_MESSAGES = {
   "ActiveSubscriptionExists": "لديك اشتراك نشط بالفعل. لا يمكنك إضافة اشتراك جديد حتى ينتهي اشتراكك الحالي.",
   "SubscriptionNotFound": "لم يتم العثور على بيانات الاشتراك.",
   "InvalidPaymentMethod": "طريقة الدفع المحددة غير صالحة.",
-  "Forbidden": "عفواً، حسابك الحالي (مستخدم عادي) ليس لديه صلاحية لعرض أو شراء باقات الشركات.",
+  "Forbidden": "عفواً، حسابك الحالي ليس لديه صلاحية لعرض أو شراء باقات الشركات.",
   "DEFAULT": "حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى لاحقاً."
 };
 
@@ -44,34 +42,24 @@ export default function SubscriptionsPage() {
   };
 
   const getTemplateImage = (tpl) => {
-  const name = (tpl?.name || "").toLowerCase();
-  if (name.includes("classic") || tpl?.id === 2) return "/images/classic.png";
-  if (name.includes("dark") || name.includes("luxury") || tpl?.id === 3) return "/images/dark.png";
-  // الافتراضي (Bright / Modern)
-  return "/images/bright.png";
+    const name = (tpl?.name || "").toLowerCase();
+    if (name.includes("classic")) return "/images/classic.png";
+    if (name.includes("dark") || name.includes("luxury")) return "/images/dark.png";
+    return "/images/bright.png";
   };
 
-  // دالة مساعدة لترجمة الخطأ
   const getErrorMessage = (errString) => {
     if (!errString) return ERROR_MESSAGES.DEFAULT;
-    // البحث في القاموس عن أي تطابق نصي
     const matchedKey = Object.keys(ERROR_MESSAGES).find(key => errString.includes(key));
-    return matchedKey ? ERROR_MESSAGES[matchedKey] : errString; // إذا لم يجده يعرض الخطأ كما هو أو يمكن وضع DEFAULT
+    return matchedKey ? ERROR_MESSAGES[matchedKey] : errString; 
   };
 
   const fetchData = async () => {
     setLoading(true);
     setError("");
     try {
-      // 💡 قمنا بإضافة console.error لنعرف لماذا لا تظهر الباقات للحساب الثاني
-      const fetchPackages = subscriptionService.getPackages().catch((e) => {
-        console.error("خطأ في جلب الباقات:", e.response?.status);
-        return [];
-      });
-      const fetchTemplates = subscriptionService.getTemplates().catch((e) => {
-        console.error("خطأ في جلب القوالب:", e.response?.status);
-        return [];
-      });
+      const fetchPackages = subscriptionService.getPackages().catch(() => []);
+      const fetchTemplates = subscriptionService.getTemplates().catch(() => []);
       const fetchSub = subscriptionService.getMySubscription().catch(() => null);
 
       const [packagesRes, templatesRes, mySubRes] = await Promise.all([
@@ -83,11 +71,11 @@ export default function SubscriptionsPage() {
       setPackages(extractData(packagesRes) || []);
       setTemplates(extractData(templatesRes) || []);
       setCurrentSub(extractData(mySubRes));
-
     } catch (err) {
       console.error("Failed to load subscription data", err);
       setError("حدث خطأ أثناء تحميل بيانات الصفحة.");
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
   };
@@ -133,7 +121,6 @@ export default function SubscriptionsPage() {
       }
     } catch (err) {
       console.error(err);
-      // 💡 استخدام دالة الترجمة هنا
       const rawError = err.response?.data?.message || err.response?.data || err.message;
       setError(getErrorMessage(typeof rawError === "string" ? rawError : JSON.stringify(rawError)));
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -154,7 +141,7 @@ export default function SubscriptionsPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent shadow-sm"></div>
       </div>
     );
   }
@@ -163,169 +150,165 @@ export default function SubscriptionsPage() {
     <ProtectedRoute>
       <div className="space-y-12 max-w-5xl mx-auto pb-16 text-right" dir="rtl">
         
-        {/* ── 1. رأس الصفحة وحالة الاشتراك الحالية ── */}
-        <div className="space-y-6">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center justify-center gap-2">
-              💳 اشتراك شركتكم العقارية
+        {/* الرأس والترقية */}
+        <div className="space-y-4">
+          <div className="border-b border-slate-200/60 pb-5">
+            <h1 className="text-2xl font-black text-slate-950 tracking-tight flex items-center gap-2">
+              💳 إدارة باقات اشتراك الوكالة
             </h1>
-            <p className="text-slate-500 text-sm mt-2">تتبع دورة الفوترة الشهرية لحسابكم، ومراقبة حالة تفعيل صلاحيات النشر لرمز الوكالة.</p>
+            <p className="text-slate-400 text-xs font-semibold mt-1">تتبع دورة الفوترة الخاصة بشركتكم، تفعيل صلاحيات النشر، واختيار الهوية البصرية المناسبة.</p>
           </div>
 
-          <div className="w-16 h-1 bg-slate-200 mx-auto rounded-full"></div>
-
           {currentSub ? (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-6 text-sm flex items-center gap-4">
-              <span className="text-3xl">✅</span>
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-sm flex items-center gap-4 animate-in fade-in duration-300">
+              <span className="text-3xl">🎉</span>
               <div>
-                <p className="font-bold text-lg mb-1">اشتراكك نشط حالياً</p>
-                <p>أنت مشترك الآن في باقة صالحة. يمكنك الاستفادة من كافة خصائص الباقة بحرية.</p>
+                <p className="font-black text-emerald-800 text-base mb-0.5">صلاحيات حسابكم نشطة ومفعلة بالكامل</p>
+                <p className="text-emerald-700/90 font-medium">شركتكم العقارية مسجلة حالياً بنظام باقة جارية بنجاح، يمكنك إدارة المتجر ونشر الإعلانات بحرية مطلقة.</p>
               </div>
             </div>
           ) : (
-            <div className="bg-amber-50/70 border border-amber-200 text-amber-800 rounded-xl p-6 text-sm text-center shadow-sm">
-              <p className="font-bold mb-2 flex items-center justify-center gap-2">
-                ⚠️ تنبيه إداري: لا يوجد اشتراك نشط تملك شركتكم حالياً أو لم يتم تأكيد دفع فاتورة الكاش بعد.
-              </p>
+            <div className="bg-amber-50/70 border border-amber-200 text-amber-800 rounded-2xl p-6 text-sm flex items-center gap-3 shadow-sm animate-in fade-in duration-300">
+              <span className="text-xl">⏳</span>
+              <p className="font-bold">تنبيه إداري: لا توجد باقة نشطة حالياً لشركتكم أو بانتظار مراجعة وتأكيد فاتورة الدفع الكاش من قبل الإدارة.</p>
             </div>
           )}
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 font-bold text-center">
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 font-bold text-center">
             {error}
           </div>
         )}
 
-        {/* 💡 تحسين تجربة المستخدم: إخفاء القوالب والباقات إذا كان المستخدم مشتركاً بالفعل */}
         {currentSub ? (
-          <div className="text-center bg-slate-50 border border-slate-200 rounded-3xl py-12">
-            <span className="text-5xl">🎉</span>
-            <h3 className="text-xl font-bold text-slate-800 mt-4 mb-2">حسابكم مفعل بالكامل</h3>
-            <p className="text-slate-500">لا تحتاج لإجراء أي اشتراكات جديدة في الوقت الحالي. يمكنك إدارة إعلاناتك من لوحة التحكم.</p>
+          <div className="text-center bg-white border border-slate-200 rounded-[2.5rem] py-16 px-6 shadow-sm">
+            <span className="text-5xl block mb-4">🚀</span>
+            <h3 className="text-xl font-black text-slate-900 mb-1">المعرض العقاري مفعّل</h3>
+            <p className="text-slate-400 text-sm font-semibold max-w-sm mx-auto leading-relaxed">باقة النشر الحالية تغطي كافة متطلباتكم التسويقية، يمكنك متابعة الوحدات من لوحة التحكم الخاصة بك.</p>
           </div>
         ) : (
           <>
-            {/* ── 2. اختيار القالب (Templates) ── */}
-            <div className="space-y-5">
-              <h3 className="text-xl font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
-                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-xs">1</span>
-                اختر تصميم صفحة شركتك (Template)
+            {/* قوالب المتجر */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-black text-xs">1</span>
+                اختر القالب والهوية البصرية المتناسقة (Template)
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {templates.length > 0 ? templates.map((tpl) => (
-                  <div 
-                    key={tpl.id}
-                    onClick={() => setSelectedTemplate(tpl.id)}
-                    className={`cursor-pointer border-2 rounded-2xl p-5 transition-all duration-300 relative ${
-                      selectedTemplate === tpl.id 
-                        ? "border-indigo-600 bg-indigo-50 shadow-md transform scale-[1.02]" 
-                        : "border-slate-200 bg-white hover:border-indigo-300"
-                    }`}
-                  >
-                    {selectedTemplate === tpl.id && (
-                      <div className="absolute top-3 left-3 bg-indigo-600 text-white rounded-full p-1">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {templates.length > 0 ? templates.map((tpl) => {
+                  const isSelected = selectedTemplate === tpl.id;
+                  return (
+                    <div 
+                      key={tpl.id}
+                      onClick={() => setSelectedTemplate(tpl.id)}
+                      className={`cursor-pointer border-2 rounded-[2rem] p-5 transition-all duration-300 relative bg-white flex flex-col justify-between ${
+                        isSelected 
+                          ? "border-indigo-600 ring-4 ring-indigo-50 shadow-md transform -translate-y-1" 
+                          : "border-slate-200 hover:border-indigo-300 hover:shadow-sm"
+                      }`}
+                    >
+                      <div>
+                        <div className="mb-4 rounded-2xl overflow-hidden border shadow-inner">
+                          <img src={getTemplateImage(tpl)} alt={tpl.name} className="w-full h-40 object-cover" />
+                        </div>
+                        <h4 className="font-black text-slate-900 text-base">{tpl.name}</h4>
+                        <p className="text-xs font-semibold text-slate-400 mt-1.5 leading-relaxed line-clamp-2">{tpl.description}</p>
                       </div>
-                    )}
-                    <div className="mb-4 rounded-xl overflow-hidden">
-                      <img src={getTemplateImage(tpl)} alt={tpl.name} className="w-full h-40 object-cover" />
+                      
+                      <div className="mt-5 pt-3 border-t border-slate-50 flex items-center justify-between text-xs font-bold text-slate-400">
+                        <span>{isSelected ? "🎯 القالب المختار" : "اختر هذا التصميم"}</span>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-indigo-600 bg-indigo-600" : "border-slate-300"}`}>
+                          {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                        </div>
+                      </div>
                     </div>
-                    <h4 className="font-bold text-lg text-slate-900">{tpl.name}</h4>
-                    <p className="text-sm text-slate-500 mt-2 line-clamp-2">{tpl.description}</p>
-                  </div>
-                )) : (
-                  <p className="text-slate-400 text-sm italic col-span-full bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    جاري تجهيز القوالب، أو أن حسابك لا يملك صلاحية لعرضها.
-                  </p>
+                  );
+                }) : (
+                  <p className="text-slate-400 text-xs font-bold italic col-span-full bg-slate-50 p-4 rounded-2xl border border-dashed text-center">جاري استرجاع خيارات القوالب الفاخرة...</p>
                 )}
               </div>
             </div>
 
-            {/* ── 3. اختيار الباقة (Packages) ── */}
-            <div className="space-y-5">
-              <h3 className="text-xl font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
-                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-xs">2</span>
-                اختر باقة النشر (Package)
+            {/* باقات النشر */}
+            <div className="space-y-6 pt-4">
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-black text-xs">2</span>
+                اختر خطة وباقة النشر الاستثمارية (Package)
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {packages.length > 0 ? packages.map((pkg) => {
                   const allowedPagesIds = parseAvailablePages(pkg.avaliablePages);
+                  const isSelected = selectedPackage === pkg.id;
 
                   return (
                     <div 
                       key={pkg.id}
                       onClick={() => setSelectedPackage(pkg.id)}
-                      className={`cursor-pointer flex flex-col border-2 rounded-3xl p-6 transition-all duration-300 relative bg-white ${
-                        selectedPackage === pkg.id 
-                          ? "border-indigo-600 shadow-xl transform scale-105 z-10" 
+                      className={`cursor-pointer flex flex-col justify-between border-2 rounded-[2rem] p-6 transition-all duration-300 relative bg-white ${
+                        isSelected 
+                          ? "border-indigo-600 shadow-xl transform scale-[1.03] z-10 ring-4 ring-indigo-50" 
                           : "border-slate-200 hover:border-indigo-300 opacity-95"
                       }`}
                     >
-                      {selectedPackage === pkg.id && (
-                        <span className="absolute -top-3 right-6 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                          اختيارك الحالي
-                        </span>
-                      )}
-                      <h4 className="text-xl font-black text-slate-900 text-center mb-1">{pkg.name}</h4>
-                      <p className="text-center text-sm text-slate-500 mb-4">{pkg.description}</p>
-                      
-                      <div className="mb-5 text-center bg-slate-50 rounded-2xl py-4 border border-slate-100">
-                        <span className="text-4xl font-black text-indigo-600">{pkg.price || 0}</span>
-                        <span className="text-slate-500 font-bold ml-1">ج.م</span>
+                      <div>
+                        <h4 className="text-lg font-black text-slate-900 text-center mb-1">{pkg.name}</h4>
+                        <p className="text-center text-xs font-medium text-slate-400 mb-5 leading-relaxed px-2">{pkg.description}</p>
+                        
+                        <div className="mb-6 text-center bg-indigo-50/40 rounded-2xl py-4 border border-indigo-100/30">
+                          <span className="text-3xl font-black text-indigo-600 tracking-tight">{pkg.price || 0}</span>
+                          <span className="text-xs font-bold text-indigo-800 mr-1">ج.م / شهرياً</span>
+                        </div>
+
+                        <ul className="space-y-3.5 text-xs text-slate-600 font-semibold mb-6 px-1">
+                          <li className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center text-[10px]">✓</span>
+                            صلاحية الباقة: {pkg.durationDays} يوم كامل
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center text-[10px]">✓</span>
+                            الحد الأقصى للنشر: {pkg.maxAds} إعلان نشط
+                          </li>
+                        </ul>
                       </div>
 
-                      <ul className="space-y-3 text-sm text-slate-600 flex-1 font-medium mb-6">
-                        <li className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
-                          صلاحية النشر: {pkg.durationDays} يوم
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
-                          عدد الإعلانات: {pkg.maxAds} إعلان
-                        </li>
-                      </ul>
-
-                      <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
-                        <p className="text-xs font-bold text-indigo-800 mb-3 border-b border-indigo-100 pb-2">
-                          الصفحات المتاحة لشركتك ({pkg.maxPages}):
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 mt-auto">
+                        <p className="text-[11px] font-black text-slate-500 mb-3 border-b border-slate-200 pb-2">
+                          الصفحات والتبويبات المتاحة ({pkg.maxPages}):
                         </p>
-                        <ul className="grid grid-cols-2 gap-2 text-xs text-indigo-700 font-medium">
+                        <ul className="grid grid-cols-2 gap-2 text-[10px] text-slate-600 font-bold">
                           {allowedPagesIds.map(pageId => (
-                            <li key={pageId} className="flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full"></span>
+                            <li key={pageId} className="flex items-center gap-1.5 truncate">
+                              <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full shrink-0"></span>
                               {PAGE_NAMES[pageId] || `صفحة إضافية`}
                             </li>
                           ))}
                         </ul>
                       </div>
-
                     </div>
                   );
                 }) : (
-                  <p className="text-slate-400 text-sm italic col-span-full bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    جاري تجهيز الباقات، أو أن حسابك لا يملك صلاحية لعرضها.
-                  </p>
+                  <p className="text-slate-400 text-xs font-bold italic col-span-full bg-slate-50 p-4 rounded-2xl border border-dashed text-center">جاري جلب خطط الاستثمار المتاحة...</p>
                 )}
               </div>
             </div>
 
-            {/* ── 4. زر تأكيد الاشتراك ── */}
+            {/* تأكيد الاشتراك */}
             {packages.length > 0 && templates.length > 0 && (
-              <div className="pt-8 border-t border-slate-200">
+              <div className="pt-8 border-t border-slate-100 flex justify-end">
                 <button 
                   onClick={handleSubscribe}
                   disabled={submitLoading || !selectedTemplate || !selectedPackage}
-                  className={`w-full md:w-auto md:mr-auto px-10 py-4 rounded-2xl font-bold text-lg transition-all flex justify-center items-center gap-2 ${
+                  className={`w-full sm:w-fit px-10 py-4 rounded-2xl font-black text-base transition-all flex justify-center items-center gap-2 ${
                     !selectedTemplate || !selectedPackage 
                       ? "bg-slate-200 text-slate-400 cursor-not-allowed" 
-                      : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-[0_8px_20px_rgba(79,70,229,0.25)] hover:-translate-y-1"
+                      : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 hover:-translate-y-0.5"
                   }`}
                 >
                   {submitLoading ? (
-                    <span className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   ) : (
-                    "تأكيد الاشتراك (الدفع كاش)"
+                    "💳 إرسال طلب تفعيل الاشتراك (كاش)"
                   )}
                 </button>
               </div>

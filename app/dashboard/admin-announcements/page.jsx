@@ -1,4 +1,3 @@
-// app/dashboard/admin-announcements/page.jsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -47,24 +46,26 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <AdminRoute>
-      <div className="space-y-6 text-right animate-in fade-in duration-300" dir="rtl">
-        <div>
-          <h1 className="text-2xl font-black text-slate-950 tracking-tight">📝 مراجعة وفحص الإعلانات العقارية</h1>
-          <p className="mt-1 text-xs font-semibold text-slate-400">إدارة وفحص دقة العقارات المعروضة من مستخدمي المنصة قبل النشر العام.</p>
+      <div className="space-y-8 text-right animate-in fade-in duration-300" dir="rtl">
+        <div className="border-b border-slate-200/60 pb-5">
+          <h1 className="text-3xl font-black text-slate-950 tracking-tight flex items-center gap-3">
+            <span className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-lg shadow-inner">📝</span> مراجعة الإعلانات العقارية
+          </h1>
+          <p className="mt-2 text-sm font-semibold text-slate-400">إدارة وفحص دقة العقارات المعروضة من مستخدمي المنصة قبل النشر العام للجمهور.</p>
         </div>
 
         {/* Status Filtering Tabs UI */}
-        <div className="flex gap-2 bg-slate-100/80 border p-1 rounded-2xl w-fit shadow-inner">
+        <div className="inline-flex p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/40 shadow-inner">
           {STATUS_TABS.map((tab) => {
             const isSelected = activeTab === tab.value;
             return (
               <button 
                 key={tab.value} 
                 onClick={() => setActiveTab(tab.value)} 
-                className={`rounded-xl px-4 py-2 text-xs font-bold transition-all duration-300 ${
+                className={`rounded-xl px-5 py-2.5 text-xs font-black transition-all duration-300 ${
                   isSelected 
-                    ? "bg-white text-indigo-600 shadow-sm border border-slate-200/20" 
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-white text-indigo-600 shadow-md border border-slate-200/10 scale-100" 
+                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 scale-95"
                 }`}
               >
                 {tab.label}
@@ -74,55 +75,58 @@ export default function AdminAnnouncementsPage() {
         </div>
 
         {/* Table Wrapper Component */}
-        <div className="bg-white border border-slate-200/60 rounded-3xl overflow-hidden shadow-[0_4px_25px_rgba(0,0,0,0.01)]">
+        <div className="bg-white/90 backdrop-blur-md border border-slate-200/70 rounded-[2rem] overflow-hidden shadow-[0_10px_30px_-15px_rgba(0,0,0,0.04)]">
           <div className="overflow-x-auto">
             <table className="w-full text-right text-sm text-slate-600">
-              <thead className="bg-slate-50 border-b border-slate-100 text-xs font-bold uppercase text-slate-900">
+              <thead className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-black uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th className="px-6 py-4">العقار والعنوان</th>
-                  <th className="px-6 py-4">النوع / الغرض</th>
-                  <th className="px-6 py-4">القيمة المالية</th>
-                  <th className="px-6 py-4 text-center">اتخاذ إجراء فوري</th>
+                  <th className="px-6 py-5">العقار والعنوان</th>
+                  <th className="px-6 py-5">النوع / الغرض</th>
+                  <th className="px-6 py-5">القيمة المالية</th>
+                  <th className="px-6 py-5 text-center">اتخاذ إجراء فوري</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/80 font-medium">
                 {loading ? (
                   <tr>
-                    <td colSpan="4" className="px-6 py-12 text-center text-slate-400">
-                      <div className="flex justify-center mb-2"><div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" /></div>
-                      جاري فحص العقارات المتاحة...
+                    <td colSpan="4" className="px-6 py-16 text-center text-slate-400">
+                      <div className="flex flex-col justify-center items-center gap-3">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent shadow-sm" />
+                        <p className="text-xs font-bold animate-pulse text-slate-400">جاري فحص العقارات المتاحة بالمستودع...</p>
+                      </div>
                     </td>
                   </tr>
                 ) : announcements.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="px-6 py-12 text-center text-slate-400 font-bold">
-                      📭 لا توجد أي عقارات مدرجة ضمن هذا التصنيف حالياً.
+                    <td colSpan="4" className="px-6 py-16 text-center text-slate-400 font-bold bg-slate-50/30">
+                      <div className="text-4xl mb-3 opacity-40">📭</div>
+                      <p className="text-sm font-black text-slate-500">لا توجد أي عقارات مدرجة ضمن هذا التصنيف حالياً.</p>
                     </td>
                   </tr>
                 ) : (
                   announcements.map((item) => (
-                    <tr key={item.id} className="transition hover:bg-slate-50/50">
-                      <td className="px-6 py-4">
-                        <Link href={`/announcement/${item.id}`} className="font-bold text-slate-900 hover:text-indigo-600 transition block">
+                    <tr key={item.id} className="transition-colors hover:bg-slate-50/60 group">
+                      <td className="px-6 py-5">
+                        <Link href={`/announcement/${item.id}`} className="font-black text-slate-900 group-hover:text-indigo-600 transition-colors block text-sm tracking-tight mb-1">
                           {item.title}
                         </Link>
-                        <span className="text-[11px] text-slate-400 font-medium mt-0.5 inline-block">📍 {item.city}</span>
+                        <span className="text-[11px] text-slate-400 font-bold bg-slate-100 px-2 py-0.5 rounded-md inline-block">📍 {item.city}</span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex px-2 py-0.5 rounded-md text-xs bg-slate-100 text-slate-700 font-bold border border-slate-200/40">
+                      <td className="px-6 py-5">
+                        <span className="inline-flex px-3 py-1 rounded-lg text-xs bg-indigo-50 text-indigo-700 font-black border border-indigo-100/50 shadow-inner">
                           {item.propertyType} • {item.purpose === "Sale" ? "للبيع" : "للإيجار"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 font-black text-slate-900">
-                        {item.price?.toLocaleString("ar-EG")} <span className="text-xs font-normal text-slate-400">ج.م</span>
+                      <td className="px-6 py-5 font-black text-slate-900 text-sm">
+                        {item.price?.toLocaleString("ar-EG")} <span className="text-xs font-semibold text-slate-400">ج.م</span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-center gap-2.5 text-xs font-bold">
+                      <td className="px-6 py-5">
+                        <div className="flex items-center justify-center gap-3 text-xs font-bold">
                           {activeTab !== "Approved" && (
-                            <button onClick={() => handleChangeStatus(item.id, "Approved")} className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all duration-200 shadow-sm">قبول وتفعيل</button>
+                            <button onClick={() => handleChangeStatus(item.id, "Approved")} className="px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md transform active:scale-95">✅ تفعيل</button>
                           )}
                           {activeTab !== "Rejected" && (
-                            <button onClick={() => handleChangeStatus(item.id, "Rejected")} className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-100 text-red-600 hover:bg-red-600 hover:text-white transition-all duration-200 shadow-sm">رفض وحجب</button>
+                            <button onClick={() => handleChangeStatus(item.id, "Rejected")} className="px-4 py-2 rounded-xl bg-red-50 border border-red-100 text-red-600 hover:bg-red-600 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md transform active:scale-95">❌ رفض</button>
                           )}
                         </div>
                       </td>

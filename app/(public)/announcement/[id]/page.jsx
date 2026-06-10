@@ -12,7 +12,7 @@ export default function MainPlatformAnnouncementPage() {
   const [loading, setLoading] = useState(true);
   const [estate, setEstate] = useState(null);
 
-  // States الخاصة بالتقييمات
+  // States التقييمات
   const [feedbacks, setFeedbacks] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [newRating, setNewRating] = useState(5);
@@ -20,7 +20,7 @@ export default function MainPlatformAnnouncementPage() {
   const [feedbackError, setFeedbackError] = useState("");
 
   const extractData = (res) => {
-    if (!res) return [];
+    if (!res) return null;
     if (res.data !== undefined) return res.data;
     if (res.value !== undefined) return res.value;
     return res;
@@ -29,8 +29,8 @@ export default function MainPlatformAnnouncementPage() {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return "/images/placeholder-property.jpg";
     if (imagePath.startsWith("http") || imagePath.startsWith("data:")) return imagePath;
-    if (imagePath.startsWith("/")) return `https://darak.runasp.net${imagePath}`;
-    return `data:image/jpeg;base64,${imagePath}`;
+    const cleanPath = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
+    return `https://darak.runasp.net${cleanPath}`;
   };
 
   useEffect(() => {
@@ -39,7 +39,6 @@ export default function MainPlatformAnnouncementPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // 1. جلب تفاصيل الإعلان الحقيقية
         const estateRes = await announcementService.getById(announcementId);
         const data = extractData(estateRes);
 
@@ -48,31 +47,35 @@ export default function MainPlatformAnnouncementPage() {
            return;
         }
 
-        // 2. معالجة وتوحيد البيانات القادمة
+        // استخراج الصورة الرئيسية من مصفوفة imageUrls
+        const primaryImgObj = data.imageUrls?.find(img => img.isPrimary);
+        const primaryImgPath = primaryImgObj ? primaryImgObj.imagePath : (data.imageUrls?.[0]?.imagePath || null);
+
         setEstate({
-          id: data.id || data.Id || announcementId,
-          title: data.title || data.Title || "عقار بدون عنوان",
-          location: `${data.city || data.City || ""}، ${data.address || data.Address || ""}`,
-          price: (data.price || data.Price || 0).toLocaleString("ar-EG"),
-          status: data.purpose === "Sale" || data.purpose === "للبيع" ? "للبيع" : "للإيجار",
-          type: data.propertyType || data.PropertyType || "غير محدد",
+          id: data.id,
+          title: data.title || "عقار بدون عنوان",
+          location: `${data.city || ""}، ${data.address || ""}`,
+          price: (data.price || 0).toLocaleString("ar-EG"),
+          status: data.purpose || "غير محدد",
+          type: data.propertyType || "غير محدد",
           advertiser: {
-            name: data.userName || data.UserName || data.companyName || data.CompanyName || "مُعلن موثوق",
-            type: data.companyId || data.CompanyId ? "شركة عقارية" : "مالك مباشر",
-            avatar: (data.userName || data.UserName || data.companyName || "م")[0],
-            companyId: data.companyId || data.CompanyId || null
+            name: data.ownerName || "مُعلن موثوق",
+            phone: data.ownerPhone || "غير متوفر",
+            avatar: (data.ownerName || "م")[0],
+            ownerId: data.ownerId
           },
-          description: data.description || data.Description || "لا يوجد وصف متاح لهذا العقار.",
-          primaryImage: getImageUrl(data.primaryImage || data.PrimaryImage),
-          images: data.images || data.Images || [],
-          area: data.area || data.Area || "-",
-          rooms: data.rooms || data.Rooms || "-",
-          bathrooms: data.bathrooms || data.Bathrooms || "-",
+          description: data.description || "لا يوجد وصف متاح لهذا العقار.",
+          primaryImage: getImageUrl(primaryImgPath),
+          images: data.imageUrls || [], // 👈 مصفوفة الصور الحقيقية
+          area: data.area ?? "-",
+          rooms: data.rooms ?? "-",
+          bathrooms: data.bathrooms ?? "-",
         });
 
-        // 3. جلب التقييمات الحقيقية
+        // جلب التقييمات
         const fbRes = await feedbackService.getAnnouncementFeedbacks(announcementId).catch(() => []);
-        setFeedbacks(extractData(fbRes) || []);
+        const fbData = extractData(fbRes);
+        setFeedbacks(Array.isArray(fbData) ? fbData : []);
 
       } catch (err) {
         console.error("Failed to fetch announcement details:", err);
@@ -93,18 +96,17 @@ export default function MainPlatformAnnouncementPage() {
     setFeedbackError("");
     
     try {
-      const payload = {
+      await feedbackService.create({
         comment: newComment,
         rating: newRating,
         announcementId: parseInt(announcementId)
-      };
-      
-      await feedbackService.create(payload);
+      });
       
       setNewComment("");
       setNewRating(5);
       const fbRes = await feedbackService.getAnnouncementFeedbacks(announcementId);
-      setFeedbacks(extractData(fbRes) || []);
+      const fbData = extractData(fbRes);
+      setFeedbacks(Array.isArray(fbData) ? fbData : []);
     } catch (err) {
       setFeedbackError("حدث خطأ أثناء إضافة التقييم. يرجى المحاولة مرة أخرى.");
     } finally {
@@ -165,23 +167,31 @@ export default function MainPlatformAnnouncementPage() {
         {/* ── العمود الأيمن (الصور والتفاصيل) ── */}
         <div className="lg:col-span-2 space-y-8">
           
-          {/* الصورة الرئيسية */}
-          <div className="relative bg-slate-200 rounded-3xl h-[400px] sm:h-[500px] overflow-hidden shadow-sm border border-slate-200">
-            <img src={estate.primaryImage} alt={estate.title} className="w-full h-full object-cover" />
+          <div className="relative bg-slate-100 rounded-3xl h-[400px] sm:h-[500px] overflow-hidden shadow-sm border border-slate-200">
+            <img 
+              src={estate.primaryImage} 
+              alt={estate.title} 
+              className="w-full h-full object-cover" 
+              onError={(e) => { e.target.src = "/images/placeholder-property.jpg"; }} 
+            />
           </div>
 
-          {/* شبكة الصور الإضافية إن وجدت */}
-          {estate.images && estate.images.length > 0 && (
+          {/* شبكة الصور الإضافية */}
+          {estate.images.length > 1 && (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-              {estate.images.map((img, idx) => (
-                <div key={idx} className="aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition">
-                  <img src={getImageUrl(img.url || img.Url || img.path)} alt={`صورة إضافية ${idx}`} className="w-full h-full object-cover" />
+              {estate.images.map((img) => (
+                <div key={img.id} className="aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition bg-slate-50">
+                  <img 
+                    src={getImageUrl(img.imagePath)} 
+                    alt={`صورة إضافية`} 
+                    className="w-full h-full object-cover" 
+                    onError={(e) => { e.target.src = "/images/placeholder-property.jpg"; }}
+                  />
                 </div>
               ))}
             </div>
           )}
 
-          {/* الإحصائيات السريعة */}
           <div className="flex flex-wrap gap-4 md:gap-8 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
             <div className="flex flex-col gap-1">
               <span className="text-slate-400 text-xs font-bold">غرف النوم</span>
@@ -199,7 +209,6 @@ export default function MainPlatformAnnouncementPage() {
             </div>
           </div>
 
-          {/* الوصف */}
           <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
             <h2 className="text-xl font-black text-slate-900 mb-4 border-b border-slate-100 pb-3">وصف العقار</h2>
             <p className="text-slate-600 leading-loose whitespace-pre-line font-medium text-[15px]">
@@ -223,33 +232,22 @@ export default function MainPlatformAnnouncementPage() {
             
             <div className="space-y-3">
               <button className="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/20">
-                📞 عرض رقم الهاتف
+                📞 {estate.advertiser.phone || "إظهار الرقم"}
               </button>
-              {estate.advertiser.companyId && (
-                <Link 
-                  href={`/company/${estate.advertiser.companyId}`}
-                  className="w-full block bg-white text-slate-700 border-2 border-slate-200 font-bold py-3 rounded-xl hover:bg-slate-50 transition-colors"
-                >
-                  🏢 زيارة صفحة الشركة
-                </Link>
-              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── قسم التقييمات (Feedback Section) ── */}
+      {/* ── قسم التقييمات ── */}
       <div className="mt-16 pt-12 border-t border-slate-200 max-w-4xl">
         <h2 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-2">
           ⭐ تقييمات وتجارب الزوار
         </h2>
 
-        {/* نموذج إضافة تقييم */}
         <form onSubmit={handleFeedbackSubmit} className="bg-slate-50 p-6 md:p-8 rounded-3xl border border-slate-200 mb-10 shadow-inner">
           <h3 className="font-bold text-slate-800 mb-4">أضف تقييمك لهذا العقار</h3>
-          
           {feedbackError && <div className="text-red-500 text-sm font-bold mb-4 bg-red-50 p-3 rounded-lg border border-red-100">{feedbackError}</div>}
-
           <div className="flex items-center gap-2 mb-4 cursor-pointer">
             <span className="text-sm font-bold text-slate-600">تقييمك:</span>
             {[1, 2, 3, 4, 5].map((star) => (
@@ -263,7 +261,6 @@ export default function MainPlatformAnnouncementPage() {
               </button>
             ))}
           </div>
-          
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
@@ -272,7 +269,6 @@ export default function MainPlatformAnnouncementPage() {
             placeholder="شاركنا رأيك وتجربتك مع هذا العقار بصدق..."
             required
           ></textarea>
-          
           <div className="flex justify-end">
             <button
               type="submit"
@@ -284,7 +280,6 @@ export default function MainPlatformAnnouncementPage() {
           </div>
         </form>
 
-        {/* قائمة التقييمات السابقة */}
         <div className="space-y-4">
           {feedbacks.length > 0 ? feedbacks.map((fb, idx) => (
             <div key={fb.id || idx} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition">
@@ -316,7 +311,6 @@ export default function MainPlatformAnnouncementPage() {
           )}
         </div>
       </div>
-
     </div>
   );
 }

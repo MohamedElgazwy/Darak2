@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCompanyTheme } from "@/app/context/CompanyThemeContext";
+import { usePathname } from "next/navigation";
 
 const PROPERTY_TYPES = [
   { label: "شقق سكنية", href: "/search?PropertyType=Apartment" },
@@ -31,53 +32,60 @@ export default function Footer() {
   const { templateId } = useCompanyTheme() || {};
   const year = new Date().getFullYear();
 
-  // ─── تجميل وتوزيع كتل الفوتر طبقا للمخططات العصرية ───
-  let footerClass = "border-t transition-colors duration-500 ";
+  // ─── تجميل وتوزيع كتل الفوتر طبقا للمخططات العصرية بظلال وإضاءات خفيفة ───
+  let footerClass = "border-t transition-colors duration-500 relative overflow-hidden ";
   let logoClass = "bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent";
   let headingClass = "text-slate-900 font-black";
-  let textClass = "text-slate-500 hover:text-indigo-600 font-medium";
+  let textClass = "text-slate-500 hover:text-indigo-600 font-bold transition-transform hover:-translate-x-1 inline-block";
   let dividerClass = "border-slate-200/60";
-  let bottomTextClass = "text-slate-400 font-medium";
-  let iconClass = "border-slate-200 text-slate-500 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 shadow-sm";
+  let bottomTextClass = "text-slate-400 font-semibold";
+  let iconClass = "border-slate-200 text-slate-500 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 shadow-sm hover:shadow-md hover:-translate-y-1";
 
   switch (templateId) {
     case 2: // Classic Theme
       footerClass += "bg-[#F4EFE6] border-[#E6DFD3]";
       logoClass = "text-[#5A4634]";
-      headingClass = "text-[#3B2F2F] font-bold";
-      textClass = "text-[#8C7A6B] hover:text-[#3B2F2F] font-medium";
+      headingClass = "text-[#3B2F2F] font-black";
+      textClass = "text-[#8C7A6B] hover:text-[#5A4634] font-bold transition-transform hover:-translate-x-1 inline-block";
       dividerClass = "border-[#E6DFD3]";
       bottomTextClass = "text-[#8C7A6B]";
-      iconClass = "border-[#D5C6B5] text-[#8C7A6B] hover:border-[#5A4634] hover:bg-[#EADDCD] hover:text-[#3B2F2F]";
+      iconClass = "border-[#D5C6B5] text-[#8C7A6B] hover:border-[#5A4634] hover:bg-[#EADDCD] hover:text-[#3B2F2F] hover:-translate-y-1 shadow-sm";
       break;
     case 3: // Dark Theme (Luxury)
-      footerClass += "bg-[#0c0c0c] border-[#1f1f1f]";
-      logoClass = "text-[#D4AF37] font-bold";
-      headingClass = "text-white font-bold";
-      textClass = "text-slate-400 hover:text-[#D4AF37] font-medium";
+      footerClass += "bg-[#050505] border-[#1a1a1a]";
+      logoClass = "text-[#D4AF37] font-black tracking-widest";
+      headingClass = "text-white font-black";
+      textClass = "text-slate-400 hover:text-[#D4AF37] font-bold transition-transform hover:-translate-x-1 inline-block";
       dividerClass = "border-[#1c1c1c]";
-      bottomTextClass = "text-slate-600";
-      iconClass = "border-[#222] text-slate-400 hover:border-[#D4AF37] hover:bg-[#111] hover:text-[#D4AF37]";
+      bottomTextClass = "text-slate-500";
+      iconClass = "border-[#222] text-slate-400 hover:border-[#D4AF37] hover:bg-[#111] hover:text-[#D4AF37] hover:-translate-y-1 shadow-md";
       break;
-    default: // Bright & Default (Modern and fallback)
-      footerClass += "bg-white border-slate-200/60";
+    default: // Bright & Default (Modern)
+      footerClass += "bg-gradient-to-b from-white to-slate-50 border-slate-200/60";
       break;
   }
 
+  const pathname = usePathname();
+  if (pathname?.startsWith('/company/')) return null;
+
   return (
     <footer className={footerClass} dir="rtl">
-      <div className="container-shell section-padding">
-        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
+      {templateId !== 3 && templateId !== 2 && (
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-indigo-100/30 rounded-full filter blur-[100px] pointer-events-none"></div>
+      )}
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
+        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-12">
           
-          {/* Brand block */}
-          <div className="flex flex-col gap-4 text-right">
-            <Link href="/" className={`text-2xl font-black ${logoClass}`}>
+          {/* Brand block (Wider) */}
+          <div className="flex flex-col gap-5 text-right lg:col-span-4">
+            <Link href="/" className={`text-3xl font-black tracking-tight ${logoClass}`}>
               دارك
             </Link>
-            <p className={`text-sm leading-relaxed ${textClass} opacity-90`}>
-              منصة دارك للعقارات — بوابتك الرقمية الذكية للبحث عن أرقى الوحدات والمقرات السكنية والتجارية في مصر بكل سهولة وأمان تام.
+            <p className={`text-sm leading-relaxed ${textClass} opacity-90 hover:translate-x-0`}>
+              منصة دارك للعقارات — بوابتك الرقمية الذكية للبحث عن أرقى الوحدات والمقرات السكنية والتجارية في مصر بكل سهولة وموثوقية عالية.
             </p>
-            <div className="flex items-center gap-2.5 mt-2">
+            <div className="flex items-center gap-3 mt-4">
               <SocialLink href="#" label="فيسبوك" icon={<FacebookIcon />} className={iconClass} />
               <SocialLink href="#" label="انستجرام" icon={<InstagramIcon />} className={iconClass} />
               <SocialLink href="#" label="واتساب" icon={<WhatsappIcon />} className={iconClass} />
@@ -85,34 +93,34 @@ export default function Footer() {
           </div>
 
           {/* Links Grid columns */}
-          <div className="text-right">
-            <h3 className={`mb-4 text-sm tracking-wider uppercase ${headingClass}`}>أنواع الوحدات العقارية</h3>
-            <ul className="flex flex-col gap-3">
+          <div className="text-right lg:col-span-3">
+            <h3 className={`mb-6 text-sm tracking-wider uppercase ${headingClass}`}>أنواع الوحدات العقارية</h3>
+            <ul className="flex flex-col gap-3.5">
               {PROPERTY_TYPES.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className={`text-sm transition-colors duration-200 ${textClass}`}>{item.label}</Link>
+                  <Link href={item.href} className={`text-xs ${textClass}`}>{item.label}</Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="text-right">
-            <h3 className={`mb-4 text-sm tracking-wider uppercase ${headingClass}`}>المدن والمحافظات</h3>
-            <ul className="flex flex-col gap-3">
+          <div className="text-right lg:col-span-3">
+            <h3 className={`mb-6 text-sm tracking-wider uppercase ${headingClass}`}>المدن والمحافظات النشطة</h3>
+            <ul className="flex flex-col gap-3.5">
               {CITIES.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className={`text-sm transition-colors duration-200 ${textClass}`}>{item.label}</Link>
+                  <Link href={item.href} className={`text-xs ${textClass}`}>{item.label}</Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="text-right">
-            <h3 className={`mb-4 text-sm tracking-wider uppercase ${headingClass}`}>روابط سريعة للمنصة</h3>
-            <ul className="flex flex-col gap-3">
+          <div className="text-right lg:col-span-2">
+            <h3 className={`mb-6 text-sm tracking-wider uppercase ${headingClass}`}>روابط سريعة</h3>
+            <ul className="flex flex-col gap-3.5">
               {QUICK_LINKS.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className={`text-sm transition-colors duration-200 ${textClass}`}>{item.label}</Link>
+                  <Link href={item.href} className={`text-xs ${textClass}`}>{item.label}</Link>
                 </li>
               ))}
             </ul>
@@ -121,14 +129,14 @@ export default function Footer() {
       </div>
 
       {/* Underbar line */}
-      <div className={`border-t ${dividerClass}`}>
-        <div className="container-shell flex flex-col items-center justify-between gap-4 py-6 sm:flex-row">
-          <p className={`text-xs ${bottomTextClass}`}>
-            © {year} دارك العقارية. جميع الحقوق الفكرية وحقوق النشر محفوظة.
+      <div className={`border-t relative z-10 ${dividerClass}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-between gap-5 py-8 sm:flex-row">
+          <p className={`text-[11px] font-bold tracking-wide ${bottomTextClass}`}>
+            © {year} شركة دارك لتقنية العقارات. جميع الحقوق محفوظة.
           </p>
           <div className="flex items-center gap-6">
-            <Link href="/privacy" className={`text-xs transition-colors ${textClass}`}>سياسة الخصوصية السرية</Link>
-            <Link href="/terms" className={`text-xs transition-colors ${textClass}`}>الشروط والأحكام العامة</Link>
+            <Link href="/privacy" className={`text-[11px] transition-colors ${textClass}`}>سياسة الخصوصية</Link>
+            <Link href="/terms" className={`text-[11px] transition-colors ${textClass}`}>الشروط والأحكام</Link>
           </div>
         </div>
       </div>
@@ -138,12 +146,12 @@ export default function Footer() {
 
 function SocialLink({ href, label, icon, className }) {
   return (
-    <a href={href} aria-label={label} target="_blank" rel="noopener noreferrer" className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-300 transform active:scale-95 ${className}`}>
+    <a href={href} aria-label={label} target="_blank" rel="noopener noreferrer" className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-300 ${className}`}>
       {icon}
     </a>
   );
 }
 
-function FacebookIcon() { return <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /></svg>; }
-function InstagramIcon() { return <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" /></svg>; }
-function WhatsappIcon() { return <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" /><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.531 5.847L.057 23.882l6.198-1.448A11.934 11.934 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.001-1.366l-.359-.214-3.68.965.981-3.595-.234-.369A9.818 9.818 0 1112 21.818z" /></svg>; }
+function FacebookIcon() { return <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /></svg>; }
+function InstagramIcon() { return <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" /></svg>; }
+function WhatsappIcon() { return <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" /><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.531 5.847L.057 23.882l6.198-1.448A11.934 11.934 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.001-1.366l-.359-.214-3.68.965.981-3.595-.234-.369A9.818 9.818 0 1112 21.818z" /></svg>; }
