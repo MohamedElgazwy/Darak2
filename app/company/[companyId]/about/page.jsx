@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { companyService, userService } from "@/app/services";
+import { companyService, userService } from "@/app/services"; // 👈 التعديل هنا: استخدام companyService
 
 export default function CompanyAboutPage() {
   const params = useParams();
@@ -11,213 +11,156 @@ export default function CompanyAboutPage() {
 
   const [loading, setLoading] = useState(true);
   const [aboutData, setAboutData] = useState(null);
-  const [company, setCompany] = useState(null);
-  const [error, setError] = useState(null);
+  const [companyProfile, setCompanyProfile] = useState(null);
 
   useEffect(() => {
-    const fetchAbout = async () => {
+    const fetchCompanyData = async () => {
       if (!companyId) return;
       setLoading(true);
-      setError(null);
 
       try {
+        // 1. جلب بيانات الملف الشخصي (الاسم واللوجو)
         const profileRes = await userService.getProfile(companyId).catch(() => null);
-        const companyInfo = profileRes?.data || profileRes;
-        setCompany(companyInfo);
+        const profile = profileRes?.data || profileRes;
+        setCompanyProfile(profile);
 
+        // 2. ⚡ جلب بيانات "من نحن" المخصصة باستخدام الـ Endpoint المباشرة
         const aboutRes = await companyService.getCompanyAbout(companyId);
         const aboutInfo = aboutRes?.data || aboutRes?.value || aboutRes;
-
+        
+        // التحقق من وجود بيانات فعلية مدخلة
         if (aboutInfo && (aboutInfo.description || aboutInfo.vision || aboutInfo.mission)) {
           setAboutData(aboutInfo);
+        } else if (profile?.description) {
+          // Fallback لاستخدام الوصف العام إذا لم توجد بيانات مخصصة في جدول About
+          setAboutData({ description: profile.description, vision: "", mission: "" });
         } else {
           setAboutData(null);
         }
+
       } catch (err) {
-        console.error("Failed to load company about:", err);
-        if (err?.response?.status === 404) {
-          setAboutData(null);
-        } else {
-          setError("تعذّر تحميل بيانات الشركة.");
-        }
+        console.error("Failed to load company data:", err);
+        setAboutData(null);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAbout();
+    fetchCompanyData();
   }, [companyId]);
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-400 border-t-transparent opacity-60" />
-          <p className="text-sm font-medium opacity-60">جاري تحميل بيانات الشركة...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
-        <div className="text-5xl opacity-40">⚠️</div>
-        <p className="font-bold opacity-70">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="text-sm font-bold underline opacity-60 hover:opacity-100"
-        >
-          إعادة المحاولة
-        </button>
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-current border-t-transparent opacity-50"></div>
       </div>
     );
   }
 
   if (!aboutData) {
     return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center">
-        <div className="text-5xl opacity-30">📋</div>
-        <h3 className="text-xl font-bold opacity-60">لم تُضف هذه الشركة بياناتها التعريفية بعد.</h3>
-        <p className="text-sm opacity-50">يرجى التواصل مباشرة مع الشركة للاستفسار.</p>
+      <div className="text-center py-32 bg-current bg-opacity-5 rounded-3xl border border-current border-opacity-10 border-dashed max-w-4xl mx-auto">
+        <div className="text-5xl mb-4 opacity-40">📋</div>
+        <h3 className="text-xl font-bold mb-2">لم يتم إعداد الملف التعريفي</h3>
+        <p className="opacity-70 text-sm max-w-md mx-auto">لم تقم هذه الشركة بكتابة النبذة التعريفية الخاصة بها حتى الآن. يرجى العودة لاحقاً.</p>
       </div>
     );
   }
 
-  const companyName =
-    company?.companyName ||
-    `${company?.firstName || ""} ${company?.lastName || ""}`.trim() ||
-    "الشركة";
+  const displayName = companyProfile?.companyName || `${companyProfile?.firstName || ''} ${companyProfile?.lastName || ''}`.trim() || 'الشركة العقارية';
 
   return (
-    <div className="space-y-20 pb-20" dir="rtl">
+    <div className="space-y-16 pb-16">
+      
+      {/* ── 1. قسم العنوان (Header) ── */}
+      <div className="text-center max-w-3xl mx-auto space-y-4">
+        <h1 className="text-4xl md:text-5xl font-black tracking-tight drop-shadow-sm">
+          قصتنا وهويتنا
+        </h1>
+        <div className="w-24 h-1.5 bg-current opacity-20 mx-auto rounded-full"></div>
+        <p className="opacity-70 text-lg md:text-xl leading-relaxed">
+          تعرف على قيمنا، الدافع وراء تميزنا، وكيف نصنع الفارق في رحلتك العقارية.
+        </p>
+      </div>
 
-      {/* ── Hero ── */}
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-500/10 border border-slate-500/20 p-10 md:p-16">
-        <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-slate-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-slate-500/10 blur-3xl" />
+      {/* ── 2. قسم الوصف الرئيسي (Main Description) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="space-y-6">
+          <h2 className="text-3xl font-bold flex items-center gap-3">
+            <div className="w-12 h-12 bg-current bg-opacity-10 rounded-2xl flex items-center justify-center overflow-hidden shrink-0">
+              {companyProfile?.logo ? (
+                <img 
+                  src={companyProfile.logo.startsWith("data:") ? companyProfile.logo : `data:image/jpeg;base64,${companyProfile.logo}`} 
+                  alt="Logo" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="font-bold opacity-80">{displayName.charAt(0)}</span>
+              )}
+            </div>
+            عن {displayName}
+          </h2>
+          <p className="opacity-80 leading-relaxed text-lg text-justify whitespace-pre-line">
+            {aboutData.description}
+          </p>
+        </div>
 
-        <div className="relative z-10 max-w-3xl mx-auto text-center space-y-6">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-500/20 border border-slate-500/30 shadow-sm overflow-hidden">
-            {company?.logo ? (
-              <img
-                src={
-                  company.logo.startsWith("data:")
-                    ? company.logo
-                    : `data:image/jpeg;base64,${company.logo}`
-                }
-                alt={companyName}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="text-3xl font-black opacity-70">
-                {companyName.charAt(0)}
-              </span>
-            )}
-          </div>
-
-          <div>
-            <p className="text-sm font-bold opacity-60 mb-2 tracking-widest uppercase">
-              من نحن
-            </p>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
-              {companyName}
-            </h1>
-          </div>
-
-          <div className="w-16 h-1 bg-slate-500/30 mx-auto rounded-full" />
-
-          {aboutData.description && (
-            <p className="text-lg md:text-xl opacity-80 leading-relaxed max-w-2xl mx-auto whitespace-pre-line">
-              {aboutData.description}
-            </p>
-          )}
+        {/* صورة جمالية تعبيرية */}
+        <div className="relative h-[400px] lg:h-[500px] rounded-[2.5rem] overflow-hidden shadow-2xl border border-current border-opacity-10 group bg-current bg-opacity-5">
+          <img 
+            src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000&auto=format&fit=crop" 
+            alt="مبنى الشركة" 
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+          <div className="absolute inset-0 bg-current opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none"></div>
         </div>
       </div>
 
-      {/* ── Stats row ── */}
-      <div className="grid grid-cols-3 gap-4 max-w-xl mx-auto text-center">
-        {[
-          { num: "10+", label: "سنوات خبرة" },
-          { num: "500+", label: "عميل راضٍ" },
-          { num: "100+", label: "وحدة مباعة" },
-        ].map((s) => (
-          <div
-            key={s.label}
-            className="bg-slate-500/10 border border-slate-500/20 rounded-2xl py-6 px-4"
-          >
-            <div className="text-3xl font-black mb-1">{s.num}</div>
-            <div className="text-xs font-bold opacity-60">{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Vision & Mission ── */}
+      {/* ── 3. قسم الرؤية والرسالة (Vision & Mission) ── */}
       {(aboutData.vision || aboutData.mission) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-current border-opacity-10 mt-8">
+          
           {aboutData.vision && (
-            <VisionMissionCard
-              icon="👁️"
-              title="رؤيتنا المستقبلية"
-              text={aboutData.vision}
-            />
+            <div className="bg-current bg-opacity-5 p-10 rounded-[2.5rem] border border-current border-opacity-10 hover:border-opacity-30 transition-colors">
+              <div className="w-16 h-16 bg-current bg-opacity-10 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-sm">
+                👁️
+              </div>
+              <h3 className="text-2xl font-bold mb-4">رؤيتنا الاستراتيجية</h3>
+              <p className="opacity-80 leading-relaxed text-lg whitespace-pre-line">
+                {aboutData.vision}
+              </p>
+            </div>
           )}
+
           {aboutData.mission && (
-            <VisionMissionCard
-              icon="🎯"
-              title="رسالتنا والتزامنا"
-              text={aboutData.mission}
-            />
+            <div className="bg-current bg-opacity-5 p-10 rounded-[2.5rem] border border-current border-opacity-10 hover:border-opacity-30 transition-colors">
+              <div className="w-16 h-16 bg-current bg-opacity-10 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-sm">
+                🎯
+              </div>
+              <h3 className="text-2xl font-bold mb-4">رسالتنا وقيمنا</h3>
+              <p className="opacity-80 leading-relaxed text-lg whitespace-pre-line">
+                {aboutData.mission}
+              </p>
+            </div>
           )}
         </div>
       )}
 
-      {/* ── Why us ── */}
-      <div className="space-y-8">
-        <h2 className="text-2xl font-bold text-center">لماذا تختارنا؟</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {[
-            { icon: "🤝", title: "شفافية تامة", desc: "نؤمن بالوضوح في كل خطوة، من التسعير حتى التوثيق والتسليم." },
-            { icon: "🏆", title: "خبرة موثوقة", desc: "فريقنا من الخبراء يضمن لك أفضل الخيارات الاستثمارية بأقل مخاطرة." },
-            { icon: "⚡", title: "استجابة فورية", desc: "نرد على استفساراتك في أسرع وقت ممكن لأننا نعرف قيمة وقتك." },
-          ].map((item) => (
-            <div
-              key={item.title}
-              className="bg-slate-500/10 border border-slate-500/20 rounded-2xl p-6 hover:bg-slate-500/20 transition-colors"
-            >
-              <div className="text-3xl mb-4">{item.icon}</div>
-              <h3 className="font-bold text-base mb-2">{item.title}</h3>
-              <p className="text-sm opacity-80 leading-relaxed">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── CTA ── */}
-      <div className="text-center pt-8 border-t border-slate-500/20">
-        <h3 className="text-2xl font-bold mb-3">جاهز لبدء رحلتك العقارية؟</h3>
-        <p className="opacity-70 mb-8 text-sm max-w-md mx-auto leading-relaxed">
-          فريقنا متاح للإجابة على جميع استفساراتك وتقديم أفضل الاستشارات المجانية.
+      {/* ── 4. دعوة لاتخاذ إجراء (Call to Action) ── */}
+      <div className="text-center mt-16 pt-12">
+        <h3 className="text-2xl font-bold mb-4">نحن شركاؤك في النجاح</h3>
+        <p className="opacity-70 mb-8 max-w-xl mx-auto">
+          فريق العمل متاح لتقديم الدعم الكامل والإجابة على أي استفسارات تتعلق بالمشاريع والعقارات المعروضة.
         </p>
-        <Link
+        <Link 
           href={`/company/${companyId}/contact`}
-          className="inline-block bg-indigo-600 text-white px-10 py-4 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg"
+          className="inline-block bg-current text-white dark:text-slate-900 invert dark:invert-0 px-10 py-4 rounded-2xl font-bold hover:opacity-80 transition-opacity shadow-lg"
         >
           تواصل معنا الآن
         </Link>
       </div>
-    </div>
-  );
-}
 
-function VisionMissionCard({ icon, title, text }) {
-  return (
-    <div className="bg-slate-500/10 p-8 rounded-[2rem] border border-slate-500/20 hover:bg-slate-500/20 transition-colors space-y-4">
-      <div className="w-14 h-14 bg-slate-500/20 rounded-2xl flex items-center justify-center text-2xl shadow-sm">
-        {icon}
-      </div>
-      <h3 className="text-xl font-bold">{title}</h3>
-      <p className="opacity-80 leading-relaxed text-sm whitespace-pre-line">{text}</p>
     </div>
   );
 }

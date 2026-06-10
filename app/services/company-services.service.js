@@ -5,6 +5,13 @@ export const companyServicesService = {
     const res = await api.get("/CompanyServices/List");
     return res?.data || res;
   },
+
+  getCompanyServices: async (companyId) => {
+    const res = await api.get(`/companies/${companyId}/services`);
+    return res?.data || res;
+  },
+
+  
   create: async (serviceData) => {
     try {
       const payload = { ...serviceData };

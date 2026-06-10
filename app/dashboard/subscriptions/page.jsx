@@ -44,11 +44,11 @@ export default function SubscriptionsPage() {
   };
 
   const getTemplateImage = (tpl) => {
-    const name = (tpl?.name || "").toLowerCase();
-    if (name.includes("modern") || name.includes("bright")) return "/images/bright.png";
-    if (name.includes("classic")) return "/images/classic.png";
-    if (name.includes("luxury") || name.includes("night") || name.includes("dark")) return "/images/night.png";
-    return "/images/placeholder-property.jpg";
+  const name = (tpl?.name || "").toLowerCase();
+  if (name.includes("classic") || tpl?.id === 2) return "/images/classic.png";
+  if (name.includes("dark") || name.includes("luxury") || tpl?.id === 3) return "/images/dark.png";
+  // الافتراضي (Bright / Modern)
+  return "/images/bright.png";
   };
 
   // دالة مساعدة لترجمة الخطأ

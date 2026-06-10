@@ -35,4 +35,9 @@ export const subscriptionService = {
     const res = await api.post("/Payments/Confirm-Cash", { subscriptionId: parseInt(subscriptionId) });
     return res.data;
   },
+
+  getPendingSubscriptions: async () => {
+    const res = await api.get("/Subscriptions/Pending");
+    return res.data;
+  },
 };

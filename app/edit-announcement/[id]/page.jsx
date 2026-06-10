@@ -48,9 +48,14 @@ function EditAnnouncementForm() {
     Latitude: "0", Longitude: "0", Address: "", PropertyType: ""
   });
 
+  // States الخاصة بالصور القديمة والجديدة والمعاينات
   const [oldImages, setOldImages] = useState([]);
+  
   const [primaryImage, setPrimaryImage] = useState(null);
+  const [primaryPreview, setPrimaryPreview] = useState(null);
+  
   const [galleryImages, setGalleryImages] = useState([]);
+  const [galleryPreviews, setGalleryPreviews] = useState([]);
 
   useEffect(() => {
     const initPageData = async () => {
@@ -107,6 +112,43 @@ function EditAnnouncementForm() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // ─── دوال معالجة معاينة وحذف الصور ───
+  
+  const handlePrimaryChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPrimaryImage(file);
+      setPrimaryPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleGalleryChange = (e) => {
+    const files = Array.from(e.target.files);
+    setGalleryImages((prev) => [...prev, ...files]);
+    
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setGalleryPreviews((prev) => [...prev, ...newPreviews]);
+  };
+
+  const removeGalleryImage = (index) => {
+    setGalleryImages((prev) => prev.filter((_, i) => i !== index));
+    setGalleryPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeOldImage = (imageId) => {
+    if (!window.confirm("هل أنت متأكد من حذف هذه الصورة؟ سيتم حذفها نهائياً عند الحفظ.")) return;
+    setOldImages(prev => prev.filter(img => (img.id || img.ImageId || img.imageId) !== imageId));
+  };
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return "/images/placeholder-property.jpg";
+    if (imagePath.startsWith("http") || imagePath.startsWith("data:")) return imagePath;
+    if (imagePath.startsWith("/")) return `https://darak.runasp.net${imagePath}`;
+    return `data:image/jpeg;base64,${imagePath}`;
+  };
+
+  // ─── رفع البيانات (Submit) ───
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -123,7 +165,7 @@ function EditAnnouncementForm() {
     }
     payload.append("Id", cleanId); 
 
-    // 2. إرسال الـ IDs للصور الحالية دائماً للمحافظة عليها في السيرفر
+    // 2. إرسال الـ IDs للصور الحالية المتبقية فقط للمحافظة عليها في السيرفر
     if (oldImages && oldImages.length > 0) {
       oldImages.forEach((img) => {
         const imgId = img.id || img.ImageId || img.imageId;
@@ -281,24 +323,89 @@ function EditAnnouncementForm() {
         </div>
       </div>
 
+      {/* ─── قسم الصور المحدث ─── */}
       <div>
-        <h3 className="text-lg font-bold text-slate-900 mb-4 border-b pb-2">تحديث الصور (اختياري)</h3>
-        <p className="text-xs text-slate-400 mb-2">اترك الحقول فارغة إذا كنت لا ترغب في تغيير الصور الحالية للعقار.</p>
-        <div className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">الصورة الرئيسية الجديدة</label>
-            <input type="file" accept="image/*" onChange={(e) => setPrimaryImage(e.target.files[0])} className="w-full text-sm text-slate-500 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-700 font-semibold" />
+        <h3 className="text-lg font-bold text-slate-900 mb-4 border-b pb-2 flex items-center justify-between">
+          <span>تحديث صور العقار</span>
+          <span className="text-xs font-normal text-slate-500 bg-slate-100 px-3 py-1 rounded-full">الصور الحالية: {oldImages.length}</span>
+        </h3>
+        
+        {/* الصور القديمة المرفوعة مسبقاً */}
+        {oldImages.length > 0 && (
+          <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+            <label className="block text-sm font-bold text-slate-700 mb-3">الصور المحفوظة حالياً (انقر على ✕ لحذف الصورة نهائياً)</label>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+              {oldImages.map((img, idx) => {
+                const imgId = img.id || img.ImageId || img.imageId;
+                return (
+                  <div key={idx} className="relative aspect-square rounded-xl overflow-hidden shadow-sm group border border-slate-200 bg-white">
+                    <img src={getImageUrl(img.url || img.Url || img.path || img.Path)} alt={`Old ${idx}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeOldImage(imgId)}
+                      className="absolute top-1.5 right-1.5 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-lg opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110"
+                      title="حذف من السيرفر"
+                    >
+                      ✕
+                    </button>
+                    {idx === 0 && <div className="absolute bottom-0 inset-x-0 bg-indigo-600/80 text-white text-[9px] text-center py-1 font-bold">قديمة</div>}
+                  </div>
+                );
+              })}
+            </div>
           </div>
+        )}
+
+        <div className="space-y-6">
+          {/* الصورة الرئيسية الجديدة */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">صور المعرض الإضافية الجديدة</label>
-            <input type="file" accept="image/*" multiple onChange={(e) => setGalleryImages(Array.from(e.target.files))} className="w-full text-sm text-slate-500 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-slate-100 file:text-slate-700 font-semibold" />
+            <label className="mb-2 block text-sm font-bold text-slate-700">تغيير الصورة الرئيسية (ستستبدل القديمة إن وُجدت)</label>
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <div className="flex-1 w-full">
+                <input type="file" accept="image/*" onChange={handlePrimaryChange} className="w-full text-sm text-slate-500 file:py-3 file:px-4 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-700 file:font-bold hover:file:bg-indigo-100 transition-all cursor-pointer border border-dashed border-slate-300 rounded-xl p-2 bg-white" />
+              </div>
+              {primaryPreview && (
+                <div className="relative w-full sm:w-32 h-32 rounded-xl overflow-hidden shadow-md border-2 border-indigo-400 shrink-0">
+                  <img src={primaryPreview} alt="Preview" className="w-full h-full object-cover" />
+                  <div className="absolute bottom-0 inset-x-0 bg-indigo-600 text-white text-[10px] text-center py-1 font-bold">رئيسية جديدة</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* إضافة صور جديدة للمعرض */}
+          <div className="pt-4 border-t border-slate-100">
+            <label className="mb-2 block text-sm font-bold text-slate-700">إضافة صور جديدة للمعرض</label>
+            <input type="file" accept="image/*" multiple onChange={handleGalleryChange} className="w-full text-sm text-slate-500 file:py-3 file:px-4 file:rounded-xl file:border-0 file:bg-slate-100 file:text-slate-700 file:font-bold hover:file:bg-slate-200 transition-all cursor-pointer border border-dashed border-slate-300 rounded-xl p-2 bg-white" />
+            
+            {/* شبكة المعاينة للصور المضافة حديثاً */}
+            {galleryPreviews.length > 0 && (
+              <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 p-4 border border-dashed border-indigo-200 rounded-2xl bg-indigo-50/30">
+                {galleryPreviews.map((preview, index) => (
+                  <div key={index} className="relative aspect-square rounded-xl overflow-hidden shadow-sm group border-2 border-indigo-200">
+                    <img src={preview} alt={`New Gallery ${index}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeGalleryImage(index)}
+                      className="absolute top-1.5 right-1.5 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-lg opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110"
+                    >
+                      ✕
+                    </button>
+                    <div className="absolute bottom-0 inset-x-0 bg-emerald-500/80 text-white text-[9px] text-center py-0.5 font-bold">جديدة</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="pt-4">
-        <button disabled={loading} type="submit" className="btn-primary w-full py-4 text-lg bg-indigo-600 hover:bg-indigo-700">
-          {loading ? "جاري حفظ التعديلات..." : "تحديث ونشر الإعلان"}
+      <div className="pt-4 flex flex-col sm:flex-row gap-4">
+        <Link href="/dashboard/announcements" className="btn-secondary flex-1 py-4 text-center rounded-xl text-lg font-bold shadow-sm transition-all text-slate-700 bg-slate-100 hover:bg-slate-200">
+          إلغاء التعديلات
+        </Link>
+        <button disabled={loading} type="submit" className="btn-primary flex-1 py-4 text-lg bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold text-white shadow-xl shadow-indigo-600/20 transform active:scale-[0.99] transition-all">
+          {loading ? "جاري حفظ التعديلات..." : "تحديث وحفظ الإعلان"}
         </button>
       </div>
     </form>

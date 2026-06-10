@@ -77,4 +77,9 @@ export const announcementService = {
     const res = await api.get("/Announcement/my", { params });
     return res.data;
   },
+
+  getStatuses: async () => {
+    const res = await api.get("/Announcement/Statuses");
+    return res.data;
+  },
 };

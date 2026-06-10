@@ -28,15 +28,11 @@ export default function CompanyOnboardingPage() {
           api.get("/Packages/List")
         ]);
 
-        // 🟢 تأمين قنص مصفوفة القوالب (Templates) بذكاء من رد السيرفر
         const tplRaw = templatesRes?.data?.data || templatesRes?.data?.items || templatesRes?.data || templatesRes || [];
-        const tplArray = Array.isArray(tplRaw) ? tplRaw : (Array.isArray(tplRaw.items) ? tplRaw.items : []);
-        setTemplates(tplArray);
+        setTemplates(Array.isArray(tplRaw) ? tplRaw : (Array.isArray(tplRaw.items) ? tplRaw.items : []));
 
-        // 🟢 تأمين قنص مصفوفة الباقات (Packages) بذكاء من رد السيرفر
         const pkgRaw = packagesRes?.data?.data || packagesRes?.data?.items || packagesRes?.data || packagesRes || [];
-        const pkgArray = Array.isArray(pkgRaw) ? pkgRaw : (Array.isArray(pkgRaw.items) ? pkgRaw.items : []);
-        setPackages(pkgArray);
+        setPackages(Array.isArray(pkgRaw) ? pkgRaw : (Array.isArray(pkgRaw.items) ? pkgRaw.items : []));
 
       } catch (err) {
         console.error("Onboarding Fetch Error:", err);
@@ -82,69 +78,71 @@ export default function CompanyOnboardingPage() {
   if (pageLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent shadow-md" />
       </div>
     );
   }
 
-  // تأمين إضافي للتأكد أن المتغيرات مصفوفات قبل عمل الـ map
-  const safeTemplates = Array.isArray(templates) ? templates : [];
-  const safePackages = Array.isArray(packages) ? packages : [];
-
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-slate-50 py-12 px-4 text-right" dir="rtl">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-5xl">
           
-          {/* شريط تقدم الخطوات الداخلي */}
+          {/* Progress Bar */}
           <div className="mb-10 flex items-center justify-center gap-4 text-sm font-medium text-slate-500">
-            <span className={`flex h-8 w-8 items-center justify-center rounded-full shadow-md ${step === 1 ? "bg-indigo-600 text-white" : "bg-green-600 text-white"}`}>
+            <span className={`flex h-8 w-8 items-center justify-center rounded-full shadow-md transition-colors ${step === 1 ? "bg-indigo-600 text-white" : "bg-emerald-500 text-white"}`}>
               {step > 1 ? "✓" : "1"}
             </span>
-            <span className={step === 1 ? "text-indigo-600 font-bold" : "text-green-600"}>واجهات مخصصة لشركتك</span>
-            <div className={`h-0.5 w-16 ${step === 2 ? "bg-indigo-600" : "bg-slate-200"}`} />
-            <span className={`flex h-8 w-8 items-center justify-center rounded-full border ${step === 2 ? "bg-indigo-600 text-white" : "bg-white text-slate-400"}`}>2</span>
-            <span className={step === 2 ? "text-indigo-600 font-bold" : ""}>باقات الاشتراك والدفع</span>
+            <span className={step === 1 ? "text-indigo-600 font-bold" : "text-emerald-600"}>واجهة الشركة</span>
+            <div className={`h-1 w-20 rounded-full transition-colors ${step === 2 ? "bg-indigo-600" : "bg-slate-200"}`} />
+            <span className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${step === 2 ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-400 border-slate-300"}`}>2</span>
+            <span className={step === 2 ? "text-indigo-600 font-bold" : ""}>باقة الاشتراك</span>
           </div>
 
-          {error && <div className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-600 font-medium">{error}</div>}
+          {error && <div className="mb-6 rounded-2xl bg-red-50 p-4 text-sm text-red-600 font-bold border border-red-100 shadow-sm">{error}</div>}
 
-          {/* ── الخطوة الأولى: اختيار واجهة العرض للشركة ── */}
+          {/* ── Step 1: Template Selection ── */}
           {step === 1 && (
-            <div className="animate-in fade-in duration-200">
-              <div className="text-center mb-12">
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">واجهات مخصصة لشركتك 🏢</h1>
-                <p className="mt-3 text-base text-slate-500">تميز عن المنافسين بامتلاك صفحة مخصصة لعرض عقارات شركتك بالتصميم الذي يعكس هويتك التجارية.</p>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="text-center mb-10">
+                <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">واجهة عرض مخصصة لشركتك 🏢</h1>
+                <p className="mt-3 text-base text-slate-500 max-w-2xl mx-auto">اختر القالب الذي يعكس الهوية البصرية لشركتك العقارية. سيتم تطبيقه فوراً على كافة صفحاتك المتاحة للجمهور.</p>
               </div>
 
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                {safeTemplates.map((tpl, idx) => {
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                {templates.map((tpl) => {
                   const isSelected = selectedTemplateId === tpl.id;
-                  const isDark = tpl.name?.toLowerCase().includes("dark") || tpl.id === 2;
-                  const isClassic = tpl.name?.toLowerCase().includes("classic") || tpl.id === 1;
+                  const isBright = tpl.id === 1;
+                  const isClassic = tpl.id === 2;
+                  const isDark = tpl.id === 3;
 
                   return (
                     <div
-                      key={tpl.id || idx}
+                      key={tpl.id}
                       onClick={() => setSelectedTemplateId(tpl.id)}
-                      className={`group relative flex flex-col justify-between rounded-2xl border bg-white p-6 shadow-sm cursor-pointer transition-all duration-300 ${
-                        isSelected ? "border-indigo-600 ring-2 ring-indigo-600/20 transform -translate-y-1" : "border-slate-200 hover:border-slate-300"
+                      className={`group relative flex flex-col justify-between rounded-3xl border bg-white p-6 cursor-pointer transition-all duration-300 ease-out ${
+                        isSelected ? "border-indigo-600 ring-4 ring-indigo-600/10 transform -translate-y-2 shadow-xl" : "border-slate-200 hover:border-slate-300 hover:shadow-md"
                       }`}
                     >
                       <div>
-                        <span className={`inline-block rounded-md px-2.5 py-0.5 text-xs font-semibold ${isClassic ? "bg-amber-50 text-amber-700 border border-amber-200" : isDark ? "bg-slate-900 text-white" : "bg-blue-50 text-blue-700 border border-blue-200"}`}>
-                          {isClassic ? "كلاسيكي" : isDark ? "فاخر" : "الأكثر طلباً"}
+                        <span className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-bold ${
+                          isClassic ? "bg-amber-50 text-amber-700 border border-amber-200" : 
+                          isDark ? "bg-slate-900 text-white border border-slate-700" : 
+                          "bg-sky-50 text-sky-700 border border-sky-200"
+                        }`}>
+                          {isClassic ? "كلاسيكي ورسمي" : isDark ? "فاخر وحديث" : "مشرق وعصري"}
                         </span>
-                        <h3 className="mt-4 text-lg font-bold text-slate-900">
-                          {isClassic ? "القالب الكلاسيكي (Classic)" : isDark ? "القالب المظلم (Dark)" : "القالب المضيء (Bright)"}
+                        <h3 className="mt-5 text-xl font-black text-slate-900">
+                          {tpl.name || (isClassic ? "Classic" : isDark ? "Dark" : "Bright")}
                         </h3>
-                        <p className="mt-2 text-xs text-slate-500 leading-relaxed">
-                          {isClassic ? "تصميم ذو طابع كلاسيكي وعتيق يعكس العراقة والأصالة للمشاريع والشركات." : isDark ? "تصميم ليلي أنيق يبرز الفخامة والرقي في العقارات والفيات الفاخرة." : "تصميم عصري ونظيف يركز على الوضوح وسهولة التصفح والبحث السريع."}
+                        <p className="mt-2 text-sm text-slate-500 leading-relaxed min-h-[60px]">
+                          {tpl.description || (isClassic ? "طابع كلاسيكي يعكس العراقة." : isDark ? "تصميم ليلي فاخر للقصور." : "تصميم نقي للوضوح والاتساع.")}
                         </p>
                       </div>
-                      <div className="mt-6 flex items-center justify-end">
-                        <div className={`flex h-5 w-5 items-center justify-center rounded-full border ${isSelected ? "border-indigo-600 bg-indigo-600" : "border-slate-300"}`}>
-                          {isSelected && <div className="h-2 w-2 rounded-full bg-white" />}
+                      <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+                        <span className="text-xs font-bold text-slate-400">اختر هذا القالب</span>
+                        <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${isSelected ? "border-indigo-600 bg-indigo-600" : "border-slate-300"}`}>
+                          {isSelected && <div className="h-2.5 w-2.5 rounded-full bg-white animate-in zoom-in" />}
                         </div>
                       </div>
                     </div>
@@ -157,48 +155,61 @@ export default function CompanyOnboardingPage() {
                   type="button"
                   disabled={!selectedTemplateId}
                   onClick={() => setStep(2)}
-                  className="w-full sm:w-64 rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition disabled:opacity-50"
+                  className="w-full sm:w-72 rounded-2xl bg-indigo-600 py-4 text-base font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  حفظ واختيار باقة الاشتراك ←
+                  تأكيد الانتقال للخطوة التالية ←
                 </button>
               </div>
             </div>
           )}
 
-          {/* ── الخطوة الثانية: عرض باقات الاشتراك ووسائل الدفع ── */}
+          {/* ── Step 2: Package Selection ── */}
           {step === 2 && (
-            <form onSubmit={handleConfirmSubscription} className="animate-in fade-in duration-200 space-y-8">
+            <form onSubmit={handleConfirmSubscription} className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-8">
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-slate-900">اختر خطة الاشتراك المناسبة لعملك 💳</h2>
-                <p className="mt-2 text-sm text-slate-500">أسعار واضحة وشفافة لتنمية أعمالك العقارية عبر منصة دارك.</p>
+                <h2 className="text-3xl font-black text-slate-900">اختر خطة الاشتراك المناسبة 💳</h2>
+                <p className="mt-2 text-base text-slate-500">أسعار واضحة وشفافة لتنمية أعمالك العقارية عبر منصة دارك.</p>
               </div>
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-                {safePackages.map((pkg, index) => {
+                {packages.map((pkg, index) => {
                   const isSelected = selectedPackageId === pkg.id;
-                  const isPopular = index === 1;
+                  const isPopular = index === 1; // Assuming the middle one is popular
+                  
                   return (
                     <div
-                      key={pkg.id || index}
+                      key={pkg.id}
                       onClick={() => setSelectedPackageId(pkg.id)}
-                      className={`relative flex flex-col justify-between rounded-2xl border bg-white p-6 shadow-sm cursor-pointer transition-all ${
-                        isSelected ? "border-indigo-600 ring-2 ring-indigo-600/20 shadow-md" : "border-slate-200 hover:border-slate-300"
+                      className={`relative flex flex-col justify-between rounded-3xl border bg-white p-8 cursor-pointer transition-all duration-300 ${
+                        isSelected ? "border-indigo-600 ring-4 ring-indigo-600/10 shadow-2xl transform scale-105 z-10" : "border-slate-200 hover:border-slate-300 hover:shadow-md"
                       }`}
                     >
-                      {isPopular && <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white px-3 py-0.5 rounded-full text-xs font-bold">الأكثر طلباً</div>}
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">{pkg.name}</h3>
-                        <p className="mt-4 flex items-baseline text-slate-900">
-                          <span className="text-3xl font-extrabold tracking-tight">{pkg.price}</span>
-                          <span className="mr-1 text-xs font-semibold text-slate-500">ج.م / شهرياً</span>
+                      {isPopular && <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-4 py-1 rounded-full text-xs font-black shadow-sm">الأكثر طلباً</div>}
+                      
+                      <div className="text-center border-b border-slate-100 pb-6 mb-6">
+                        <h3 className="text-xl font-black text-slate-900">{pkg.name}</h3>
+                        <p className="mt-4 flex items-center justify-center text-slate-900">
+                          <span className="text-4xl font-black tracking-tight">{pkg.price}</span>
+                          <span className="mr-1 text-sm font-bold text-slate-500">ج.م / شهرياً</span>
                         </p>
-                        <ul className="mt-4 space-y-2 text-xs text-slate-600 border-t pt-4">
-                          <li>✔ {pkg.announcementsLimit === -1 ? "إعلانات غير محدودة" : `${pkg.announcementsLimit} إعلانات نشطة`}</li>
-                          <li>✔ صفحة مخصصة للشركة بالفلاتر</li>
-                          <li>✔ دعم فني متكامل</li>
-                        </ul>
                       </div>
-                      <div className="mt-6 flex h-5 w-5 items-center justify-center rounded-full border mr-auto">
+
+                      <ul className="space-y-4 text-sm font-bold text-slate-600 flex-1">
+                        <li className="flex items-center gap-3">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">✓</span>
+                          {pkg.announcementsLimit === -1 ? "إعلانات غير محدودة" : `${pkg.announcementsLimit} إعلانات نشطة`}
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">✓</span>
+                          مدة الصلاحية: {pkg.durationDays} يوم
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">✓</span>
+                          صفحات متجر مخصصة ({pkg.maxPages})
+                        </li>
+                      </ul>
+
+                      <div className="mt-8 flex h-6 w-6 items-center justify-center rounded-full border-2 mx-auto transition-colors">
                         <div className={`h-3 w-3 rounded-full ${isSelected ? "bg-indigo-600" : "bg-transparent"}`} />
                       </div>
                     </div>
@@ -206,44 +217,50 @@ export default function CompanyOnboardingPage() {
                 })}
               </div>
 
-              {/* تحديد طريقة الدفع */}
-              <div className="p-6 bg-white border rounded-2xl space-y-4">
-                <h3 className="text-base font-bold text-slate-900">طريقة الدفع</h3>
-                <div className="flex gap-4">
-                  <label className="flex border p-4 rounded-xl flex-1 justify-between items-center cursor-pointer hover:bg-slate-50">
-                    <span className="text-sm font-medium text-slate-700">نقداً للمندوب (Cash)</span>
-                    <input type="radio" name="paymentMethod" value="Cash" checked={paymentMethod === "Cash"} onChange={() => setPaymentMethod("Cash")} className="text-indigo-600" />
+              {/* Payment Method */}
+              <div className="p-8 bg-white border border-slate-200 rounded-3xl space-y-6 shadow-sm">
+                <h3 className="text-lg font-black text-slate-900 border-b border-slate-100 pb-4">طريقة الدفع المريحة</h3>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <label className={`flex flex-1 items-center justify-between p-5 rounded-2xl cursor-pointer transition-all border-2 ${paymentMethod === "Cash" ? "border-indigo-600 bg-indigo-50/50" : "border-slate-200 hover:bg-slate-50"}`}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">💵</span>
+                      <span className="font-bold text-slate-900">الدفع نقداً (Cash)</span>
+                    </div>
+                    <input type="radio" name="paymentMethod" value="Cash" checked={paymentMethod === "Cash"} onChange={() => setPaymentMethod("Cash")} className="h-5 w-5 text-indigo-600 focus:ring-indigo-500" />
                   </label>
-                  <label className="flex border p-4 rounded-xl flex-1 justify-between items-center cursor-pointer hover:bg-slate-50">
-                    <span className="text-sm font-medium text-slate-700">بطاقة ائتمانية (Visa)</span>
-                    <input type="radio" name="paymentMethod" value="Visa" checked={paymentMethod === "Visa"} onChange={() => setPaymentMethod("Visa")} className="text-indigo-600" />
+                  <label className={`flex flex-1 items-center justify-between p-5 rounded-2xl cursor-pointer transition-all border-2 ${paymentMethod === "Visa" ? "border-indigo-600 bg-indigo-50/50" : "border-slate-200 hover:bg-slate-50"}`}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">💳</span>
+                      <span className="font-bold text-slate-900">بطاقة ائتمان (Visa/MC)</span>
+                    </div>
+                    <input type="radio" name="paymentMethod" value="Visa" checked={paymentMethod === "Visa"} onChange={() => setPaymentMethod("Visa")} className="h-5 w-5 text-indigo-600 focus:ring-indigo-500" />
                   </label>
                 </div>
 
                 {paymentMethod === "Visa" && (
-                  <div className="grid grid-cols-3 gap-4 pt-4 border-t border-dashed animate-in slide-in-from-top-2 duration-200">
-                    <div className="col-span-3">
-                      <label className="block text-xs font-semibold text-slate-600 mb-1">رقم البطاقة</label>
-                      <input required type="text" name="cardNumber" value={cardInfo.cardNumber} onChange={handleCardChange} placeholder="xxxx xxxx xxxx xxxx" className="w-full rounded-xl border px-4 py-2 text-sm focus:outline-none focus:border-indigo-600" />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="sm:col-span-3">
+                      <label className="block text-xs font-bold text-slate-700 mb-2">رقم البطاقة</label>
+                      <input required type="text" name="cardNumber" value={cardInfo.cardNumber} onChange={handleCardChange} placeholder="4000 1234 5678 9010" className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-all font-mono" dir="ltr" />
                     </div>
-                    <div className="col-span-2">
-                      <label className="block text-xs font-semibold text-slate-600 mb-1">تاريخ الانتهاء</label>
-                      <input required type="text" name="expiryDate" value={cardInfo.expiryDate} onChange={handleCardChange} placeholder="MM/YY" className="w-full rounded-xl border px-4 py-2 text-sm focus:outline-none focus:border-indigo-600" />
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-700 mb-2">تاريخ الانتهاء</label>
+                      <input required type="text" name="expiryDate" value={cardInfo.expiryDate} onChange={handleCardChange} placeholder="MM/YY" className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-all font-mono" dir="ltr" />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1">رمز التحقق (CVV)</label>
-                      <input required type="text" name="cvv" value={cardInfo.cvv} onChange={handleCardChange} placeholder="123" className="w-full rounded-xl border px-4 py-2 text-sm focus:outline-none focus:border-indigo-600" />
+                      <label className="block text-xs font-bold text-slate-700 mb-2">رمز CVV</label>
+                      <input required type="text" name="cvv" value={cardInfo.cvv} onChange={handleCardChange} placeholder="123" className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-all font-mono" dir="ltr" maxLength="4" />
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-4">
-                <button type="submit" disabled={submitting || !selectedPackageId} className="flex-1 rounded-xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-700 transition disabled:opacity-50">
-                  {submitting ? "جاري تفعيل الاشتراك..." : "تأكيد الاشتراك وتفعيل الحساب"}
+              <div className="flex flex-col-reverse sm:flex-row gap-4 pt-4">
+                <button type="button" onClick={() => setStep(1)} className="rounded-2xl border-2 border-slate-200 bg-white px-8 py-4 text-base font-bold text-slate-700 hover:bg-slate-50 transition-all">
+                  العودة للخطوة السابقة
                 </button>
-                <button type="button" onClick={() => setStep(1)} className="rounded-xl border bg-white px-6 py-3.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
-                  السابق
+                <button type="submit" disabled={submitting || !selectedPackageId} className="flex-1 rounded-2xl bg-indigo-600 py-4 text-base font-bold text-white shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-3">
+                  {submitting ? <span className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" /> : "إتمام الدفع وتفعيل الواجهة 🚀"}
                 </button>
               </div>
             </form>
