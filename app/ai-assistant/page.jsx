@@ -1,4 +1,3 @@
-// app/ai-assistant/page.jsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -54,9 +53,12 @@ export default function AIAssistantPage() {
     initChatbot();
   }, []);
 
+  // 💡 تم تعطيل هذا الجزء بناءً على طلبك لإيقاف التمرير التلقائي (Auto-scroll)
+  /*
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+  */
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -66,7 +68,6 @@ export default function AIAssistantPage() {
     setInput("");
     
     setMessages(prev => [...prev, { sender: "user", text: userMessage }]);
-    loading && setStatus(true);
     setLoading(true);
 
     try {
@@ -211,6 +212,7 @@ export default function AIAssistantPage() {
                   </div>
                 </div>
               )}
+              {/* قمنا بإبقاء الديف فقط تحسباً لاحتياجك المستقبلي للريفرنس، ولكنه لم يعد يتم التمرير إليه */}
               <div ref={messagesEndRef} />
             </div>
 

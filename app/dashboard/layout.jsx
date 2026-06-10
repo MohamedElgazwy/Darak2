@@ -74,6 +74,9 @@ export default function DashboardLayout({ children }) {
     );
   }
 
+  // متغير للتحقق هل المستخدم الحالي هو شركة
+  const isUserCompany = isCompany || user?.userType === "Company";
+
   return (
     <ProtectedRoute>
       <div className="flex min-h-[calc(100vh-64px)] bg-[#f8fafc]" dir="rtl">
@@ -87,14 +90,28 @@ export default function DashboardLayout({ children }) {
         <aside className={`fixed inset-y-0 right-0 z-50 w-64 transform border-l border-slate-200/60 bg-white/95 backdrop-blur-md transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "translate-x-full"}`}>
           <div className="flex h-full flex-col justify-between overflow-y-auto p-5">
             <div className="space-y-6">
+              
               {/* User Identity Header Card */}
               <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 p-5 shadow-lg text-right border border-slate-800 relative overflow-hidden group">
                 <div className="absolute -top-12 -left-12 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all duration-500" />
-                <p className="text-sm font-black text-white truncate">{user?.firstName} {user?.lastName}</p>
-                <p className="text-xs text-slate-400 truncate mt-1 font-medium">{user?.email}</p>
+                
+                {/* 💡 عرض اسم الشركة لو كان حساب شركة، وإلا عرض اسم الشخص */}
+                <p className="text-sm font-black text-white truncate" title={isUserCompany && user?.companyName ? user?.companyName : `${user?.firstName} ${user?.lastName}`}>
+                  {isUserCompany && user?.companyName ? user.companyName : `${user?.firstName} ${user?.lastName}`}
+                </p>
+
+                {/* 💡 لو كان شركة، نعرض اسم المدير بخط أصغر */}
+                {isUserCompany && user?.companyName && (
+                  <p className="text-[10px] text-slate-400 truncate mt-0.5 font-medium">
+                    إدارة: {user?.firstName} {user?.lastName}
+                  </p>
+                )}
+
+                <p className="text-[11px] text-indigo-300/80 truncate mt-1 font-semibold">{user?.email}</p>
+                
                 <div className="mt-4">
                   <span className="inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black tracking-wide bg-white/10 text-indigo-300 border border-white/5 backdrop-blur-md">
-                    {isAdmin ? "👑 مدير النظام" : (isCompany || user?.userType === "Company") ? "🏢 شركة عقارية" : "👤 مستخدم عادى"}
+                    {isAdmin ? "👑 مدير النظام" : isUserCompany ? "🏢 شركة عقارية" : "👤 مستخدم عادى"}
                   </span>
                 </div>
               </div>
@@ -147,7 +164,7 @@ export default function DashboardLayout({ children }) {
             </div>
 
             {/* Logout Button */}
-            <div className="border-t border-slate-100 pt-4">
+            <div className="border-t border-slate-100 pt-4 mt-6">
               <button onClick={logout} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 hover:bg-red-100/80 text-red-600 px-4 py-3.5 text-sm font-black transition-all transform active:scale-[0.98]">
                 🚪 تسجيل الخروج من الحساب
               </button>
