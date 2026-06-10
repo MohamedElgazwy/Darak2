@@ -32,8 +32,31 @@ export default function CompanyNavbar({ companyId }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           
-          {/* Logo & Company Name */}
-          <div className="flex-shrink-0 flex items-center gap-3">
+          {/* ─── الجزء الأيمن: زر العودة + لوجو الشركة واسمها ─── */}
+          <div className="flex-shrink-0 flex items-center gap-3 sm:gap-4">
+            
+            {/* زر العودة للمنصة الرئيسية */}
+            <Link 
+              href="/" 
+              title="العودة لمنصة دارك"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-500/10 hover:bg-slate-500/20 transition-all duration-300 group"
+            >
+              <svg 
+                className="w-5 h-5 transition-transform group-hover:translate-x-1" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+              <span className="text-xs font-black hidden sm:block">دارك</span>
+            </Link>
+
+            {/* فاصل زجاجي خفيف بين زر العودة واللوجو */}
+            <div className="h-8 w-px bg-current opacity-20 hidden sm:block"></div>
+
+            {/* اللوجو */}
             <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-lg overflow-hidden shadow-sm ${!storeData.logo ? theme.accentBg : 'bg-transparent border border-current border-opacity-10'}`}>
               {storeData.logo ? (
                 <img src={storeData.logo.startsWith("data:") ? storeData.logo : `data:image/jpeg;base64,${storeData.logo}`} alt={storeData.companyName} className="w-full h-full object-cover" />
@@ -41,10 +64,12 @@ export default function CompanyNavbar({ companyId }) {
                 storeData.companyName.charAt(0)
               )}
             </div>
+            
+            {/* اسم الشركة */}
             <span className={`font-black text-xl tracking-tight ${theme.text}`}>{storeData.companyName}</span>
           </div>
 
-          {/* Navigation Links */}
+          {/* ─── الجزء الأوسط: الروابط (عقاراتنا، من نحن...) ─── */}
           <nav className="hidden md:flex space-x-8 space-x-reverse">
             {allowedLinks.map((link, idx) => {
               const fullPath = `${basePath}${link.path}`;
@@ -57,7 +82,7 @@ export default function CompanyNavbar({ companyId }) {
             })}
           </nav>
 
-          {/* Contact Button (If Page 5 is available) */}
+          {/* ─── الجزء الأيسر: زر تواصل معنا ─── */}
           <div className="flex items-center">
             {storeData.availablePages.includes(5) && (
               <Link href={`${basePath}/contact`} className={`hidden md:inline-flex px-6 py-2.5 rounded-full text-sm font-bold shadow-md transition-transform hover:-translate-y-0.5 ${theme.accentBg}`}>
@@ -65,6 +90,7 @@ export default function CompanyNavbar({ companyId }) {
               </Link>
             )}
           </div>
+
         </div>
       </div>
     </header>
