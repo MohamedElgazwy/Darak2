@@ -3,95 +3,91 @@
 import Link from "next/link";
 
 export default function PropertyCard({ property }) {
-  
-  // دالة ذكية للتعامل مع مسارات الصور القادمة من الباك إند
+  // دالة ذكية لمعالجة مسار الصورة لتجنب الأخطاء
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return "/images/placeholder-property.jpg";
+    if (!imagePath) return "https://placehold.co/600x400?text=Darak+Real+Estate";
     if (imagePath.startsWith("http") || imagePath.startsWith("data:")) return imagePath;
     if (imagePath.startsWith("/")) return `https://darak.runasp.net${imagePath}`;
-    return `data:image/jpeg;base64,${imagePath}`;
+    return `https://darak.runasp.net/${imagePath}`;
   };
 
-  // دوال مساعدة لاستخراج البيانات أياً كانت حالة الأحرف
-  const id = property.id || property.Id;
-  const price = property.price || property.Price || 0;
-  const title = property.title || property.Title || "بدون عنوان";
-  const city = property.city || property.City || "";
-  const address = property.address || property.Address || "";
-  const purpose = property.purpose || property.Purpose;
-  const propertyType = property.propertyType || property.PropertyType;
+  const imageUrl = getImageUrl(property.primaryImage);
   
-  // 💡 الحل الجذري لمشكلة الشرطة (-): استخدام ?? بدلاً من || ليسمح بظهور الرقم 0
-  const area = property.area ?? property.Area ?? "-";
-  const rooms = property.rooms ?? property.Rooms ?? "-";
-  const bathrooms = property.bathrooms ?? property.Bathrooms ?? "-";
-  
-  // شمولية في التقاط اسم مفتاح الصورة من السيرفر
-  const imageSrc = getImageUrl(property.primaryImage || property.PrimaryImage || property.image || property.Image);
+  // معالجة الغرض إذا كان مرسلاً من الباك إند (وإخفاؤه بذكاء إذا لم يكن موجوداً)
+  const purposeText = property.purpose === "Sale" || property.purpose === "للبيع" ? "للبيع" : 
+                      property.purpose === "Rent" || property.purpose === "للإيجار" ? "للإيجار" : null;
 
   return (
-    <div className="group surface-card flex flex-col overflow-hidden transition-all hover:shadow-md bg-white rounded-2xl border text-right" dir="rtl">
-      {/* ── Image Container ── */}
+    <div className="group flex flex-col bg-white border border-slate-200/60 rounded-[2rem] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_15px_35px_rgba(79,70,229,0.08)] hover:-translate-y-1.5 transition-all duration-300 text-right" dir="rtl">
+      
+      {/* ── حاوية الصورة والشارات (Badges) ── */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-        <div className="absolute left-3 top-3 z-10 flex flex-col gap-2">
-          <span className="rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
-            {purpose === "Sale" || purpose === "للبيع" ? "للبيع" : "للإيجار"}
-          </span>
-          <span className="rounded-md bg-white/90 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur-sm">
-            {propertyType}
-          </span>
-        </div>
-        
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageSrc}
-          alt={title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          onError={(e) => { e.target.src = "/images/placeholder-property.jpg"; }}
+        <img 
+          src={imageUrl} 
+          alt={property.title} 
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+          onError={(e) => { e.target.src = "https://placehold.co/600x400?text=Darak"; }}
         />
-      </div>
-
-      {/* ── Content ── */}
-      <div className="flex flex-1 flex-col p-5">
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="line-clamp-1 text-lg font-black text-indigo-700">
-            {price.toLocaleString("ar-EG")} <span className="text-xs font-medium text-slate-500">ج.م</span>
-          </h3>
-        </div>
         
-        <p className="line-clamp-2 text-sm font-bold text-slate-900 mb-4">
-          {title}
-        </p>
-
-        <div className="mb-4 flex items-center gap-1.5 text-sm text-slate-500 font-medium">
-          <span className="opacity-80">📍</span>
-          <span className="truncate">{city}، {address}</span>
+        {/* تدرج لوني خفيف أسفل الصورة لإبراز الشارات */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-40 transition-opacity group-hover:opacity-60"></div>
+        
+        {/* الشارات (النوع والغرض) */}
+        <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+          {purposeText && (
+            <span className="rounded-xl bg-indigo-600/90 backdrop-blur-md px-3 py-1.5 text-xs font-black text-white shadow-sm border border-white/20">
+              {purposeText}
+            </span>
+          )}
+          {property.propertyType && (
+            <span className="rounded-xl bg-white/95 backdrop-blur-md px-3 py-1.5 text-xs font-black text-slate-800 shadow-sm border border-slate-200/50">
+              {property.propertyType}
+            </span>
+          )}
         </div>
 
-        {/* ── Features Divider ── */}
-        <div className="mt-auto grid grid-cols-3 divide-x divide-x-reverse divide-slate-100 border-t border-slate-100 pt-4">
-          <div className="flex flex-col items-center justify-center gap-1">
-            <span className="text-[11px] font-bold text-slate-400">المساحة</span>
-            <span className="text-sm font-black text-slate-700">{area} م²</span>
+        {/* شارة التميز (إن وجدت) */}
+        {property.isFeatured && (
+          <div className="absolute top-4 left-4">
+            <span className="flex items-center gap-1 rounded-xl bg-amber-500/95 backdrop-blur-md px-2.5 py-1 text-[10px] font-black text-white shadow-sm border border-white/20">
+              ⭐ مميز
+            </span>
           </div>
-          <div className="flex flex-col items-center justify-center gap-1">
-            <span className="text-[11px] font-bold text-slate-400">الغرف</span>
-            <span className="text-sm font-black text-slate-700">{rooms}</span>
-          </div>
-          <div className="flex flex-col items-center justify-center gap-1">
-            <span className="text-[11px] font-bold text-slate-400">الحمامات</span>
-            <span className="text-sm font-black text-slate-700">{bathrooms}</span>
-          </div>
-        </div>
+        )}
       </div>
 
-      <div className="p-4 pt-0">
-        <Link 
-          href={`/announcement/${id}`}
-          className="flex w-full items-center justify-center rounded-xl bg-slate-50 border border-slate-100 py-3 text-sm font-bold text-indigo-600 transition hover:bg-indigo-600 hover:text-white"
-        >
-          عرض التفاصيل الكاملة
-        </Link>
+      {/* ── حاوية المحتوى ── */}
+      <div className="flex flex-col flex-1 p-5 md:p-6">
+        
+        {/* السعر */}
+        <div className="mb-2.5">
+          <span className="text-2xl font-black tracking-tight text-indigo-600">
+            {property.price?.toLocaleString("ar-EG")}
+          </span>
+          <span className="text-xs font-bold text-slate-400 mr-1.5">ج.م</span>
+        </div>
+
+        {/* العنوان */}
+        <h3 className="text-lg font-black text-slate-900 line-clamp-1 mb-2.5 group-hover:text-indigo-600 transition-colors">
+          {property.title}
+        </h3>
+
+        {/* الموقع */}
+        <div className="flex items-start gap-1.5 text-sm font-semibold text-slate-500 mb-6">
+          <span className="mt-0.5 text-slate-400">📍</span>
+          <span className="line-clamp-2 leading-relaxed">{property.city}، {property.address}</span>
+        </div>
+
+        {/* زر عرض التفاصيل */}
+        <div className="mt-auto pt-4 border-t border-slate-100">
+          <Link 
+            href={`/announcement/${property.id}`} 
+            className="flex items-center justify-center w-full py-3.5 rounded-xl bg-slate-50 border border-slate-200/60 text-indigo-600 text-sm font-black transition-all duration-300 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 shadow-sm"
+          >
+            عرض التفاصيل الكاملة
+          </Link>
+        </div>
+
       </div>
     </div>
   );
