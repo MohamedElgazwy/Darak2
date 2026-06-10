@@ -205,7 +205,7 @@ export default function Navbar() {
                   تسجيل الدخول
                 </Link>
                 <Link href="/auth/register" className={`text-sm py-2.5 px-6 rounded-2xl font-bold transition-all duration-300 shadow-lg transform hover:-translate-y-0.5 active:scale-95 ${templateId === 3 ? "bg-gradient-to-r from-[#D4AF37] to-[#b5952f] text-black shadow-yellow-600/20" : "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-indigo-600/20"}`}>
-                  إنشاء حساب مجاني
+                  إنشاء حساب
                 </Link>
               </div>
             )}
