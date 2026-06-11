@@ -51,8 +51,19 @@ function LoginForm() {
     setError("");
 
     try {
+      // 1. تنفيذ طلب تسجيل الدخول
       await login(formData);
-      router.push("/dashboard");
+      
+      // 2. قراءة بيانات المستخدم من الـ LocalStorage فور نجاح الدخول
+      const storedUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+      
+      // 3. التوجيه الذكي (Smart Routing) بناءً على نوع الحساب
+      if (storedUser?.userType === "Company" || storedUser?.roles?.includes("Company")) {
+        router.push("/onboarding"); // توجيه الشركات لصفحة الإعدادات الأولية
+      } else {
+        router.push("/dashboard"); // توجيه المستخدمين والمديرين للوحة التحكم المعتادة
+      }
+      
     } catch (err) {
       setError(
         err.response?.data?.message || 
