@@ -51,26 +51,28 @@ function LoginForm() {
     setError("");
 
     try {
-      // 1. تنفيذ طلب تسجيل الدخول
-      await login(formData);
+      // 1. تنفيذ طلب تسجيل الدخول (واستقبال البيانات المرجعة من الباك إند)
+      const userData = await login(formData);
       
-      // 2. قراءة بيانات المستخدم من الـ LocalStorage فور نجاح الدخول
-      const storedUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+      // 2. التحقق من نوع المستخدم المباشر المرفق في الـ Response
+      // نتحقق من خصائص الأمان (Roles) أو من نوع المستخدم (userType)
+      const isCompanyUser = userData?.userType === "Company" || userData?.roles?.includes("Company");
       
-      // 3. التوجيه الذكي (Smart Routing) بناءً على نوع الحساب
-      if (storedUser?.userType === "Company" || storedUser?.roles?.includes("Company")) {
-        router.push("/onboarding"); // توجيه الشركات لصفحة الإعدادات الأولية
-      } else {
-        router.push("/dashboard"); // توجيه المستخدمين والمديرين للوحة التحكم المعتادة
-      }
+      // 3. تأخير زمني خفيف جداً لضمان حفظ الـ Cookie والـ LocalStorage بالكامل قبل التوجيه
+      setTimeout(() => {
+        if (isCompanyUser) {
+          router.push("/onboarding"); // توجيه الشركات لصفحة الإعدادات الأولية
+        } else {
+          router.push("/dashboard"); // توجيه المستخدمين والمديرين للوحة التحكم
+        }
+      }, 300); // 300 جزء من الثانية تكفي لضمان التوجيه الصحيح
       
     } catch (err) {
       setError(
         err.response?.data?.message || 
         "فشل تسجيل الدخول. يرجى التحقق من البريد الإلكتروني وكلمة المرور."
       );
-    } finally {
-      setLoading(false);
+      setLoading(false); // نوقف التحميل فقط في حالة الخطأ
     }
   };
 
