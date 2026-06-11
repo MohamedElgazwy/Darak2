@@ -6,28 +6,35 @@ import Link from "next/link";
 import api from "@/app/services/api";
 
 export default function CompanyStorefront() {
-  const { id } = useParams();
+  const params = useParams();
   const router = useRouter();
+  
+  // 💡 حل مشكلة التعليق: استخراج المعرف سواء كان اسم المجلد [id] أو [companyId]
+  const companyId = params?.id || params?.companyId; 
   
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // إذا لم يتم التقاط المعرف بعد، لا تفعل شيئاً
+    if (!companyId) return;
+
     const fetchCompanyProfile = async () => {
       try {
-        const res = await api.get(`/Users/${id}/profile`);
+        const res = await api.get(`/Users/${companyId}/profile`);
         const data = res?.data?.data || res?.data || res;
         setCompany(data);
       } catch (err) {
         console.error("Error fetching company profile:", err);
         setError("تعذر تحميل الصفحة الشخصية لهذه الشركة. قد يكون الرابط غير صحيح أو تم إغلاق الحساب.");
       } finally {
-        setLoading(false);
+        setLoading(false); // 💡 سيتم إغلاق شاشة التحميل هنا دائماً
       }
     };
-    if (id) fetchCompanyProfile();
-  }, [id]);
+    
+    fetchCompanyProfile();
+  }, [companyId]);
 
   if (loading) {
     return (
@@ -72,8 +79,7 @@ export default function CompanyStorefront() {
     btnPrimary: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-600/20",
   };
 
-  if (tplId === 2) {
-    // Classic Luxury Theme
+  if (tplId === 2) { // Classic
     themeConfig = {
       bgApp: "bg-[#F4EFE6]",
       heroGradient: "bg-gradient-to-b from-[#5A4634] to-[#3B2F2F]",
@@ -86,8 +92,7 @@ export default function CompanyStorefront() {
       badgeBg: "bg-[#EADDCD] text-[#5A4634] border-[#D5C6B5]",
       btnPrimary: "bg-[#5A4634] text-white hover:bg-[#3B2F2F] shadow-[#5A4634]/20",
     };
-  } else if (tplId === 3) {
-    // Dark Modern Theme
+  } else if (tplId === 3) { // Dark
     themeConfig = {
       bgApp: "bg-[#050505]",
       heroGradient: "bg-[#111111]",
@@ -102,12 +107,10 @@ export default function CompanyStorefront() {
     };
   }
 
-  // معالجة اللوجو
   const logoUrl = company.logo
     ? (company.logo.startsWith("data:") || company.logo.startsWith("http") ? company.logo : `data:image/jpeg;base64,${company.logo}`)
     : "https://placehold.co/400x400?text=Logo";
 
-  // دالة ذكية لمعالجة مسار صور العقارات
   const getImageUrl = (imagePath) => {
     if (!imagePath) return "https://placehold.co/600x400?text=Darak+Property";
     if (imagePath.startsWith("http") || imagePath.startsWith("data:")) return imagePath;
@@ -118,18 +121,8 @@ export default function CompanyStorefront() {
   return (
     <div className={`min-h-screen relative pb-24 ${themeConfig.bgApp}`} dir="rtl">
       
-      {/* ─── زر العودة السريع العائم (Floating Action Button) ─── */}
-      <button 
-        onClick={() => router.push('/')}
-        className="fixed bottom-8 left-8 z-50 flex items-center justify-center gap-2 bg-slate-900/90 backdrop-blur-md hover:bg-black text-white px-5 py-3.5 rounded-full shadow-2xl transition-all transform hover:scale-105 active:scale-95 group border border-slate-700/50"
-      >
-        <span className="text-xl group-hover:-translate-x-1 transition-transform">🔙</span>
-        <span className="text-xs font-black tracking-wide hidden sm:block">العودة لمنصة دارك</span>
-      </button>
-
       {/* ─── 1. قسم البانر الفاخر (Hero Section) ─── */}
-      <section className={`relative pt-24 pb-32 px-4 sm:px-6 lg:px-8 text-center ${themeConfig.heroGradient} overflow-hidden rounded-b-[4rem] shadow-xl`}>
-        {/* مؤثرات خلفية ناعمة */}
+      <section className={`relative pt-12 pb-32 px-4 sm:px-6 lg:px-8 text-center ${themeConfig.heroGradient} overflow-hidden rounded-b-[4rem] shadow-xl`}>
         {tplId !== 3 && tplId !== 2 && (
           <>
             <div className="absolute top-0 right-1/4 w-96 h-96 bg-white/5 rounded-full filter blur-[80px] pointer-events-none"></div>
@@ -137,7 +130,7 @@ export default function CompanyStorefront() {
           </>
         )}
         
-        <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center">
+        <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center mt-12">
           <div className="w-32 h-32 md:w-40 md:h-40 bg-white p-1.5 rounded-full shadow-2xl mb-6 relative group overflow-hidden border-4 border-white/20">
             <img src={logoUrl} alt={company.companyName} className="w-full h-full object-cover rounded-full" />
             {company.averageRating > 0 && (
@@ -162,13 +155,6 @@ export default function CompanyStorefront() {
                 <p className="text-lg font-black">{company.announcementResponses?.length || 0} عقار</p>
               </div>
             </div>
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-3 text-white flex items-center gap-3 shadow-inner">
-              <span className="text-xl">💬</span>
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider">تجارب العملاء</p>
-                <p className="text-lg font-black">{company.totalReviews || 0} تقييم</p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -181,7 +167,6 @@ export default function CompanyStorefront() {
             <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${themeConfig.cardTextTitle}`}>
               المحفظة العقارية الحصرية للشركة
             </h2>
-            <p className="text-sm font-semibold text-slate-500 mt-2">تصفح أحدث الوحدات المدرجة والمدارة من قبل فريق الوكالة مباشرة.</p>
           </div>
 
           {company.announcementResponses && company.announcementResponses.length > 0 ? (
@@ -193,7 +178,6 @@ export default function CompanyStorefront() {
                 return (
                   <div key={item.id} className={`group flex flex-col rounded-3xl overflow-hidden border transition-all duration-300 hover:-translate-y-2 shadow-sm hover:shadow-2xl ${themeConfig.cardBg} ${themeConfig.cardBorder}`}>
                     
-                    {/* الصورة والشارات */}
                     <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                       <img 
                         src={getImageUrl(item.primaryImage)} 
@@ -210,17 +194,8 @@ export default function CompanyStorefront() {
                           </span>
                         )}
                       </div>
-
-                      {item.isFeatured && (
-                        <div className="absolute top-4 left-4">
-                          <span className="flex items-center gap-1 rounded-xl bg-amber-500/95 backdrop-blur-md px-2.5 py-1 text-[10px] font-black text-white shadow-sm border border-white/20">
-                            ⭐ مميز
-                          </span>
-                        </div>
-                      )}
                     </div>
 
-                    {/* تفاصيل العقار */}
                     <div className="p-6 flex flex-col flex-1">
                       <div className="mb-2">
                         <span className={`text-2xl font-black tracking-tight ${themeConfig.cardTextPrice}`}>
@@ -243,7 +218,7 @@ export default function CompanyStorefront() {
                           href={`/announcement/${item.id}`} 
                           className={`flex items-center justify-center w-full py-3.5 rounded-xl text-sm font-black transition-all duration-300 shadow-md transform active:scale-95 ${themeConfig.btnPrimary}`}
                         >
-                          معاينة التفاصيل الكاملة
+                          معاينة التفاصيل
                         </Link>
                       </div>
                     </div>
@@ -255,7 +230,7 @@ export default function CompanyStorefront() {
             <div className="flex flex-col items-center justify-center text-center py-20 border-2 border-dashed border-slate-200 rounded-[2rem] bg-slate-50/50">
               <div className="text-6xl mb-4 opacity-30">📭</div>
               <h3 className={`text-xl font-black ${themeConfig.cardTextTitle}`}>المحفظة العقارية فارغة</h3>
-              <p className="text-sm font-semibold text-slate-400 mt-2 max-w-sm">لم تقم الشركة بإدراج أي وحدات عقارية للجمهور حتى الآن، يرجى العودة لاحقاً.</p>
+              <p className="text-sm font-semibold text-slate-400 mt-2 max-w-sm">لم تقم الشركة بإدراج أي وحدات عقارية حتى الآن.</p>
             </div>
           )}
         </div>
